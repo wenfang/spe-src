@@ -21,18 +21,26 @@ spe_redis_connect
 */
 void
 spe_redis_connect(spe_redis_t* sr, spe_handler_t handler) {
-  ASSERT(sr);
+  ASSERT(sr && sr->host && sr->port);
   sr->handler = handler;
   spe_conn_connect(sr->conn, sr->host, sr->port, SPE_HANDLER1(on_connect, sr));
 }
 
 static void
-on_receive(void* arg) {
+on_receive_line(void* arg) {
   spe_redis_t* sr = arg;
   spe_conn_t* conn = sr->conn;
   if (conn->error) sr->error = 1;
   if (conn->closed) sr->closed = 1;
-  SPE_HANDLER_CALL(sr->handler);
+
+  spe_slist_clean(sr->recv_buffer);
+  if (conn->buffer->data[0] == '-') sr->error = 1;
+  if (conn->buffer->data[0] == '+' || conn->buffer->data[0] == '-' ||
+      conn->buffer->data[0] == ':') {
+    spe_slist_appendb(sr->recv_buffer, conn->buffer->data+1, conn->buffer->len-1);
+    SPE_HANDLER_CALL(sr->handler);
+    return;
+  }
 }
 
 static void
@@ -45,43 +53,7 @@ on_send(void* arg) {
     SPE_HANDLER_CALL(sr->handler);
     return;
   }
-  spe_conn_readuntil(conn, "\r\n", SPE_HANDLER1(on_receive, sr));
-}
-
-/*
-===================================================================================================
-spe_redis_get
-===================================================================================================
-*/
-void
-spe_redis_get(spe_redis_t* sr, spe_string_t* key, spe_handler_t handler) {
-  ASSERT(sr && key);
-  sr->handler = handler;
-  spe_conn_writes(sr->conn, "*2\r\n");
-  spe_conn_writes(sr->conn, "$3\r\nGET\r\n");
-  char buf[1024];
-  sprintf(buf, "$%d\r\n%s\r\n", key->len, key->data);
-  spe_conn_writes(sr->conn, buf);
-  spe_conn_flush(sr->conn, SPE_HANDLER1(on_send, sr));
-}
-
-/*
-===================================================================================================
-spe_redis_set
-===================================================================================================
-*/
-void
-spe_redis_set(spe_redis_t* sr, spe_string_t* key, spe_string_t* value, spe_handler_t handler) {
-  ASSERT(sr && key && value);
-  sr->handler = handler;
-  spe_conn_writes(sr->conn, "*3\r\n");
-  spe_conn_writes(sr->conn, "$3\r\nSET\r\n");
-  char buf[1024];
-  sprintf(buf, "$%d\r\n%s\r\n$%d\r\n", key->len, key->data, value->len);
-  spe_conn_writes(sr->conn, buf);
-  spe_conn_write(sr->conn, value);
-  spe_conn_writes(sr->conn, "\r\n");
-  spe_conn_flush(sr->conn, SPE_HANDLER1(on_send, sr));
+  spe_conn_readuntil(conn, "\r\n", SPE_HANDLER1(on_receive_line, sr));
 }
 
 static void
@@ -159,4 +131,18 @@ failout2:
 failout1:
   free(sr);
   return NULL;
+}
+
+/*
+===================================================================================================
+spe_redis_destroy
+===================================================================================================
+*/
+void
+spe_redis_destroy(spe_redis_t* sr) {
+  ASSERT(sr);
+  spe_slist_destroy(sr->send_buffer);
+  spe_slist_destroy(sr->recv_buffer);
+  spe_conn_destroy(sr->conn);
+  free(sr);
 }
