@@ -15,9 +15,6 @@ spe_sock_accept_timeout(int fd, int timeout);
 extern bool 
 spe_sock_set_block(int fd, int block);
 
-extern bool
-spe_sock_is_nonblock(int fd);
-
 extern int  
 spe_sock_tcp_server(const char* addr, int port);
 

@@ -21,12 +21,6 @@ extern void
 spe_redis_connect(spe_redis_t* sr, spe_handler_t handler);
 
 extern void
-spe_redis_get(spe_redis_t* sr, spe_string_t* key, spe_handler_t handler);
-
-extern void
-spe_redis_set(spe_redis_t* sr, spe_string_t* key, spe_string_t* value, spe_handler_t handler);
-
-extern void
 spe_redis_do(spe_redis_t* sr, spe_handler_t handler, int nargs, ...);
 
 extern spe_redis_t*

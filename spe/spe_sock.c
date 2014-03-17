@@ -50,7 +50,7 @@ spe_sock_tcp_server(const char* addr, int port) {
   struct sockaddr_in saddr;
   saddr.sin_family = AF_INET;
   if (sock_addr_valid(addr)) {
-    if (inet_aton(addr, (struct in_addr*)&saddr.sin_addr.s_addr) == 0) goto error_out;
+    if (inet_aton(addr, &saddr.sin_addr) == 0) goto error_out;
   } else {
     saddr.sin_addr.s_addr = htonl(INADDR_ANY);
   }
@@ -128,16 +128,4 @@ spe_sock_set_block(int fd, int block) {
   }
   if (fcntl(fd, F_SETFL, flags) < 0) return false;
   return true;
-}
-
-/*
-===================================================================================================
-spe_sock_is_nonblock
-===================================================================================================
-*/
-bool 
-spe_sock_is_nonblock(int fd) {
-  int flags;
-  if ((flags = fcntl(fd, F_GETFL, 0)) < 0) return false;
-  return flags & O_NONBLOCK;
 }
