@@ -7,7 +7,7 @@ typedef void (*spe_server_Handler)(struct spe_server_s*, unsigned);
 
 struct spe_server_conf_s {
   spe_server_Init     init;
-  void*               init_arg;
+  void*               arg;
   spe_server_Handler  handler;
   unsigned            daemon:1;
   unsigned            nprocs:7;

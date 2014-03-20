@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
   }
   // parse config file
   if (!spe_opt_create(argv[1])) {
-    fprintf(stderr, "[ERROR] Parse File %s.\n", argv[1]);
+    fprintf(stderr, "Parse File %s Error ...\n", argv[1]);
     return 1;
   }
   // init
@@ -39,12 +39,12 @@ int main(int argc, char* argv[]) {
   if (res) return res;
   // run module init
   if (!spe_modules_init()) {
-    fprintf(stderr, "[ERROR] Module Init\n");
+    fprintf(stderr, "Module Init Error ...\n");
     return 1;
   }
   // run module start
   if (!spe_modules_start()) {
-    fprintf(stderr, "[ERROR] Module Start\n");
+    fprintf(stderr, "Module Start Error ...\n");
     return 1;
   }
   while (!spe_main_stop) {
@@ -56,11 +56,11 @@ int main(int argc, char* argv[]) {
     spe_signal_process();
   }
   if (!spe_modules_end()) {
-    fprintf(stderr, "[ERROR] Module End\n");
+    fprintf(stderr, "Module End Error ...\n");
     return 1;
   }
   if (!spe_modules_exit()) {
-    fprintf(stderr, "[ERROR] Module Exit\n");
+    fprintf(stderr, "Module Exit Error ...\n");
     return 1;
   }
   spe_opt_destroy();

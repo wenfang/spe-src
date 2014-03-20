@@ -54,6 +54,9 @@ spe_set_max_open_files(unsigned file_num) {
 }
 
 extern int
+spe_daemon();
+
+extern int
 spe_spawn(unsigned procs);
 
 #endif

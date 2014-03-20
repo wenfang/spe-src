@@ -9,7 +9,6 @@ struct spe_module_s {
   bool              (*exit)(void);
   bool              (*start)(void);
   bool              (*end)(void);
-  struct list_head  node;
 };
 typedef struct spe_module_s spe_module_t;
 
