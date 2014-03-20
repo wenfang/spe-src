@@ -80,6 +80,8 @@ spe_epoll_disable(unsigned fd, unsigned mask) {
   return epoll_change(fd, epoll_t, epoll_t->mask & (~mask));
 }
 
+
+static struct epoll_event epEvents[MAX_FD];
 /*
 ===================================================================================================
 spe_epoll_process
@@ -87,7 +89,6 @@ spe_epoll_process
 */
 void
 spe_epoll_process(int timeout) {
-  struct epoll_event epEvents[MAX_FD];
   int events_n = epoll_wait(epfd, epEvents, MAX_FD, timeout);
   if (unlikely(events_n < 0)) {
     if (errno == EINTR) return;
@@ -96,8 +97,9 @@ spe_epoll_process(int timeout) {
   }
   if (events_n == 0) return;
   // check events
+  struct epoll_event* e;
   for (int i=0; i<events_n; i++) {
-    struct epoll_event* e = &epEvents[i];
+    e = &epEvents[i];
     spe_epoll_t* epoll_t = &all_epoll[e->data.fd];
     if ((e->events & EPOLLIN) && (epoll_t->mask & SPE_EPOLL_READ)) {
       SPE_HANDLER_CALL(epoll_t->read_task->handler);

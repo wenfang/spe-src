@@ -155,14 +155,6 @@ read_common(void* arg) {
   if (conn->closed || conn->error) read_end(conn);
 }
 
-static void
-read_start(void* arg) {
-  spe_conn_t* conn = arg;
-  conn->read_task.handler = SPE_HANDLER1(read_common, conn);
-  spe_epoll_enable(conn->fd, SPE_EPOLL_READ, &conn->read_task);
-  if (conn->read_expire_time) spe_timer_enable(&conn->read_task, conn->read_expire_time);
-}
-
 /*
 ===================================================================================================
 spe_conn_read_until
@@ -182,12 +174,12 @@ spe_conn_readuntil(spe_conn_t* conn, char* delim, spe_handler_t handler) {
     return true;
   }
   // (async):
-  conn->read_task.handler = SPE_HANDLER1(read_start, conn);
   conn->read_timeout      = 0;
   conn->delim             = delim;
   conn->read_type         = SPE_CONN_READUNTIL;
-  read_start(conn);
-  //spe_task_enqueue(&conn->read_task);
+  conn->read_task.handler = SPE_HANDLER1(read_common, conn);
+  spe_epoll_enable(conn->fd, SPE_EPOLL_READ, &conn->read_task);
+  if (conn->read_expire_time) spe_timer_enable(&conn->read_task, conn->read_expire_time);
   return true;
 }
 
@@ -209,12 +201,12 @@ spe_conn_readbytes(spe_conn_t* conn, unsigned len, spe_handler_t handler) {
     return true;
   }
   // (async):
-  // conn->read_task.handler = SPE_HANDLER1(read_start, conn);
   conn->read_timeout      = 0;
   conn->rbytes            = len;
   conn->read_type         = SPE_CONN_READBYTES;
-  read_start(conn);
-  //spe_task_enqueue(&conn->read_task);
+  conn->read_task.handler = SPE_HANDLER1(read_common, conn);
+  spe_epoll_enable(conn->fd, SPE_EPOLL_READ, &conn->read_task);
+  if (conn->read_expire_time) spe_timer_enable(&conn->read_task, conn->read_expire_time);
   return true;
 }
 
@@ -236,11 +228,11 @@ spe_conn_read(spe_conn_t* conn, spe_handler_t handler) {
     return true;
   }
   // (async):
-  //conn->read_task.handler = SPE_HANDLER1(read_start, conn);
   conn->read_timeout      = 0;
   conn->read_type         = SPE_CONN_READ;
-  read_start(conn);
-  //spe_task_enqueue(&conn->read_task);
+  conn->read_task.handler = SPE_HANDLER1(read_common, conn);
+  spe_epoll_enable(conn->fd, SPE_EPOLL_READ, &conn->read_task);
+  if (conn->read_expire_time) spe_timer_enable(&conn->read_task, conn->read_expire_time);
   return true;
 }
 
@@ -328,48 +320,16 @@ spe_conn_t*
 spe_conn_create(unsigned fd) {
   if (unlikely(fd >= MAX_FD)) return NULL;
   spe_conn_t* conn = &all_conn[fd];
-  spe_sock_set_block(fd, 0);
-  conn->fd = fd;
-  spe_task_init(&conn->read_task);
-  spe_task_init(&conn->write_task);
-  spe_task_init(&conn->read_callback_task);
-  spe_task_init(&conn->write_callback_task);
-  // init buffer
-  if (!conn->read_buffer && !(conn->read_buffer = spe_string_create(BUF_SIZE))) {
-    SPE_LOG_ERR("spe_string_create error");
-    return NULL;
-  }
-  if (!conn->write_buffer && !(conn->write_buffer = spe_string_create(BUF_SIZE))) {
-    SPE_LOG_ERR("spe_string_create error");
-    return NULL;
-  }
-  if (!conn->buffer && !(conn->buffer = spe_string_create(BUF_SIZE))) {
-    SPE_LOG_ERR("spe_string_create error");
-    return NULL;
-  }
   spe_string_clean(conn->read_buffer);
   spe_string_clean(conn->write_buffer);
-  spe_string_clean(conn->buffer);
   // init conn status
   conn->read_expire_time  = 0;
   conn->write_expire_time = 0;
   conn->read_type         = SPE_CONN_READNONE;
   conn->write_type        = SPE_CONN_WRITENONE;
-  conn->connect_timeout   = 0;
-  conn->read_timeout      = 0;
-  conn->write_timeout     = 0;
   conn->closed            = 0;
   conn->error             = 0;
   return conn;
-}
-
-static void
-spe_conn_destroy_common(void* arg) {
-  spe_conn_t* conn = arg;
-  spe_timer_disable(&conn->read_task);
-  spe_timer_disable(&conn->write_task);
-  spe_epoll_disable(conn->fd, SPE_EPOLL_READ | SPE_EPOLL_WRITE);
-  spe_sock_close(conn->fd);
 }
 
 /*
@@ -380,7 +340,29 @@ spe_conn_destroy
 void
 spe_conn_destroy(spe_conn_t* conn) {
   ASSERT(conn);
-  //conn->read_callback_task.handler = SPE_HANDLER1(spe_conn_destroy_common, conn);
-  //spe_task_enqueue(&conn->read_callback_task);
-  spe_conn_destroy_common(conn);
+  spe_task_dequeue(&conn->read_task);
+  spe_task_dequeue(&conn->write_task);
+  spe_task_dequeue(&conn->read_callback_task);
+  spe_task_dequeue(&conn->write_callback_task);
+  if (conn->read_expire_time) spe_timer_disable(&conn->read_task);
+  if (conn->read_expire_time) spe_timer_disable(&conn->write_task);
+  spe_epoll_disable(conn->fd, SPE_EPOLL_READ | SPE_EPOLL_WRITE);
+  spe_sock_close(conn->fd);
+}
+
+__attribute__((constructor))
+static void
+conn_init(void) {
+  spe_conn_t* conn;
+  for (int i=0; i<MAX_FD; i++) {
+    conn = &all_conn[i];
+    conn->fd = i;
+    spe_task_init(&conn->read_task);
+    spe_task_init(&conn->write_task);
+    spe_task_init(&conn->read_callback_task);
+    spe_task_init(&conn->write_callback_task);
+    conn->read_buffer = spe_string_create(BUF_SIZE);
+    conn->write_buffer = spe_string_create(BUF_SIZE);
+    conn->buffer = spe_string_create(BUF_SIZE);
+  }
 }
