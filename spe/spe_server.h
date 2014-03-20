@@ -1,8 +1,6 @@
 #ifndef __SPE_SERVER_H
 #define __SPE_SERVER_H
 
-#include "spe_epoll.h"
-
 struct spe_server_s;
 typedef void (*spe_server_Init)(struct spe_server_s*, void*);
 typedef void (*spe_server_Handler)(struct spe_server_s*, unsigned);
@@ -11,12 +9,13 @@ struct spe_server_conf_s {
   spe_server_Init     init;
   void*               init_arg;
   spe_server_Handler  handler;
-  unsigned            nprocs;
+  unsigned            daemon:1;
+  unsigned            nprocs:7;
 };
 typedef struct spe_server_conf_s spe_server_conf_t;
 
 struct spe_server_s {
-  unsigned            listenfd;
+  unsigned            sfd;
   spe_server_Handler  handler;
   void*               data;
 };
