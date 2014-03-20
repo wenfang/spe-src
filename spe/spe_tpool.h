@@ -30,16 +30,16 @@ struct spe_tpool_s {
 };
 typedef struct spe_tpool_s spe_tpool_t;
 
-extern spe_tpool_t*
-spe_tpool_create();
-
-extern void
-spe_tpool_destroy(spe_tpool_t* tpool);
-
 extern void
 spe_tpool_enable(spe_tpool_t* tpool);
 
 extern bool
 spe_tpool_do(spe_tpool_t* tpool, spe_handler_t handler);
+
+extern spe_tpool_t*
+spe_tpool_create();
+
+extern void
+spe_tpool_destroy(spe_tpool_t* tpool);
 
 #endif
