@@ -3,6 +3,7 @@
 #include "spe_log.h"
 #include "spe_util.h"
 #include <stdio.h>
+#include <stdarg.h>
 
 static void
 on_connect(void* arg) {
@@ -83,6 +84,40 @@ spe_redis_set(spe_redis_t* sr, spe_string_t* key, spe_string_t* value, spe_handl
   spe_conn_flush(sr->conn, SPE_HANDLER1(on_send, sr));
 }
 
+static void
+spe_redis_send(spe_redis_t* sr) {
+  char buf[1024];
+  sprintf(buf, "*%d\r\n", sr->send_buffer->len);
+  spe_conn_writes(sr->conn, buf);
+  for (int i=0; i<sr->send_buffer->len; i++) {
+    sprintf(buf, "$%d\r\n%s\r\n", sr->send_buffer->data[i]->len, sr->send_buffer->data[i]->data);
+    spe_conn_writes(sr->conn, buf);
+  }
+  spe_conn_flush(sr->conn, SPE_HANDLER1(on_send, sr));
+}
+
+/*
+===================================================================================================
+spe_redis_do
+===================================================================================================
+*/
+void
+spe_redis_do(spe_redis_t* sr, spe_handler_t handler, int nargs, ...) {
+  ASSERT(sr && nargs>0);
+  sr->handler = handler;
+  spe_slist_clean(sr->send_buffer);
+  char* key;
+  va_list ap;
+  va_start(ap, nargs);
+  for (int i=0; i<nargs; i++) {
+    key = va_arg(ap, char*);
+    spe_slist_appends(sr->send_buffer, key);
+  }
+  key = va_arg(ap, char*);
+  va_end(ap);
+  spe_redis_send(sr);
+}
+
 /*
 ===================================================================================================
 spe_redis_create
@@ -98,17 +133,30 @@ spe_redis_create(const char* host, const char* port) {
   int cfd = spe_sock_tcp_socket();
   if (cfd < 0) {
     SPE_LOG_ERR("spe_sock_tcp_socket error");
-    free(sr);
-    return NULL;
+    goto failout1;
   }
-  sr->conn = spe_conn_create(cfd);
-  if (!sr->conn) {
+  if (!(sr->conn = spe_conn_create(cfd))) {
     SPE_LOG_ERR("spe_conn_create error");
-    spe_sock_close(cfd);
-    free(sr);
-    return NULL;
+    goto failout2;
   }
   sr->host = host;
   sr->port = port;
+
+  if (!(sr->send_buffer = spe_slist_create())) {
+    SPE_LOG_ERR("spe_slist_create error");
+    goto failout2;
+  }
+  if (!(sr->recv_buffer = spe_slist_create())) {
+    SPE_LOG_ERR("spe_slist_create error");
+    goto failout3;
+  }
   return sr;
+
+failout3:
+  spe_slist_destroy(sr->send_buffer);
+failout2:
+  spe_sock_close(cfd);
+failout1:
+  free(sr);
+  return NULL;
 }
