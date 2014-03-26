@@ -12,6 +12,23 @@
 
 #define DEFAULT_BACKLOG	10240
 
+static bool
+sock_addr_valid(const char* addr) {
+  if (!addr) return false;
+  int dotCnt = 0;
+  int addrLen = strlen(addr);
+  for (int i=0; i<addrLen; i++) {
+    if (addr[i] >='0' && addr[i]<='9') continue;
+    if (addr[i] == '.') {
+      dotCnt++;
+      continue;
+    }
+    return false;
+  }
+  if (dotCnt != 3) return false;
+  return true;
+}
+
 /*
 ===================================================================================================
 spe_sock_tcp_server
@@ -32,7 +49,7 @@ spe_sock_tcp_server(const char* addr, int port) {
   //set socket address
   struct sockaddr_in saddr;
   saddr.sin_family = AF_INET;
-  if (addr) {
+  if (sock_addr_valid(addr)) {
     if (inet_aton(addr, (struct in_addr*)&saddr.sin_addr.s_addr) == 0) goto error_out;
   } else {
     saddr.sin_addr.s_addr = htonl(INADDR_ANY);
