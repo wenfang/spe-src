@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
@@ -18,7 +19,7 @@ spe_sock_tcp_server
 ===================================================================================================
 */
 int 
-spe_sock_tcp_server(int port) {
+spe_sock_tcp_server(const char* addr, int port) {
   int sfd;
   if ((sfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) return -1;
   //set socket option
@@ -31,7 +32,11 @@ spe_sock_tcp_server(int port) {
   //set socket address
   struct sockaddr_in saddr;
   saddr.sin_family = AF_INET;
-  saddr.sin_addr.s_addr = htonl(INADDR_ANY);
+  if (addr) {
+    if (inet_aton(addr, (struct in_addr*)&saddr.sin_addr.s_addr) == 0) goto error_out;
+  } else {
+    saddr.sin_addr.s_addr = htonl(INADDR_ANY);
+  }
   saddr.sin_port = htons(port);
   //bind and listen
   if (bind(sfd, (struct sockaddr *)&saddr, sizeof(saddr)) != 0) goto error_out;

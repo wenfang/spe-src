@@ -19,10 +19,7 @@ extern bool
 spe_sock_is_nonblock(int fd);
 
 extern int  
-spe_sock_tcp_server(int port);
-
-extern int
-spe_sock_tcp_server_p(const char* listen_addr);
+spe_sock_tcp_server(const char* addr, int port);
 
 static inline int 
 spe_sock_tcp_socket() {
