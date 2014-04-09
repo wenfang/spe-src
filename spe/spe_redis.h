@@ -17,10 +17,10 @@ struct spe_redis_s {
 };
 typedef struct spe_redis_s spe_redis_t;
 
-extern void
+extern bool
 spe_redis_connect(spe_redis_t* sr, spe_handler_t handler);
 
-extern void
+extern bool
 spe_redis_do(spe_redis_t* sr, spe_handler_t handler, int nargs, ...);
 
 extern spe_redis_t*
