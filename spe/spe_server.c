@@ -57,6 +57,10 @@ spe_server_create(unsigned sfd, spe_server_conf_t* conf) {
   srv->handler = conf->handler;
   srv->listenfd = sfd;
   if (conf->init) conf->init(srv, conf->init_arg);
+  if (conf->nprocs) {
+    spe_spawn(conf->nprocs);
+    spe_epoll_fork();
+  }
   return srv;
 }
 

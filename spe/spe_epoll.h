@@ -21,4 +21,7 @@ spe_epoll_process(int timeout);
 extern void
 spe_epoll_wakeup(void);
 
+extern void
+spe_epoll_fork();
+
 #endif

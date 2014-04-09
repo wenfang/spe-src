@@ -11,6 +11,7 @@ struct spe_server_conf_s {
   spe_server_Init     init;
   void*               init_arg;
   spe_server_Handler  handler;
+  unsigned            nprocs;
 };
 typedef struct spe_server_conf_s spe_server_conf_t;
 

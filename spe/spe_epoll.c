@@ -124,6 +124,22 @@ spe_epoll_wakeup(void) {
   if (write(epoll_eventfd, &u, sizeof(uint64_t)) <= 0) SPE_LOG_ERR("spe_epoll_wakeup error");
 }
 
+void
+spe_epoll_fork(void) {
+  close(epoll_eventfd);
+  close(epfd);
+  epfd = epoll_create(1024);
+  // create eventfd
+  epoll_eventfd = eventfd(0, 0);
+  spe_sock_set_block(epoll_eventfd, 0);
+  // set eventfd
+  struct epoll_event ee;
+  ee.data.u64 = 0;
+  ee.data.fd  = epoll_eventfd;
+  ee.events   = EPOLLIN;
+  epoll_ctl(epfd, EPOLL_CTL_ADD, epoll_eventfd, &ee);
+}
+
 __attribute__((constructor))
 static void
 epoll_init(void) {
