@@ -25,5 +25,6 @@
 #include "spe_worker.h"
 #include "spe_routine.h"
 #include "spe_redis.h"
+#include "spe_shm.h"
 
 #endif
