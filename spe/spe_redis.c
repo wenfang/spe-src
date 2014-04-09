@@ -27,6 +27,16 @@ spe_redis_connect(spe_redis_t* sr, spe_handler_t handler) {
 }
 
 static void
+on_receive_data(void* arg) {
+  spe_redis_t* sr = arg;
+  spe_conn_t* conn = sr->conn;
+  if (conn->error) sr->error = 1;
+  if (conn->closed) sr->closed = 1;
+  spe_slist_appendb(sr->recv_buffer, conn->buffer->data, conn->buffer->len-2);
+  SPE_HANDLER_CALL(sr->handler);
+}
+
+static void
 on_receive_line(void* arg) {
   spe_redis_t* sr = arg;
   spe_conn_t* conn = sr->conn;
@@ -40,6 +50,15 @@ on_receive_line(void* arg) {
     spe_slist_appendb(sr->recv_buffer, conn->buffer->data+1, conn->buffer->len-1);
     SPE_HANDLER_CALL(sr->handler);
     return;
+  }
+  if (sr->error || sr->closed) {
+    SPE_HANDLER_CALL(sr->handler);
+    return;
+  }
+
+  if (conn->buffer->data[0] == '$') {
+    int resSize = atoi(conn->buffer->data+1);
+    spe_conn_readbytes(conn, resSize+2, SPE_HANDLER1(on_receive_data, sr));
   }
 }
 

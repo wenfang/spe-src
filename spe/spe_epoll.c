@@ -11,6 +11,13 @@
 #include <sys/eventfd.h>
 #include <errno.h>
 
+struct spe_epoll_s {
+  spe_handler_t read_handler;
+  spe_handler_t write_handler;
+  unsigned      mask:2;             // mask set in epoll
+};
+typedef struct spe_epoll_s spe_epoll_t;
+
 static int          epfd;
 static int          epoll_eventfd;
 static spe_epoll_t  all_epoll[MAX_FD];
