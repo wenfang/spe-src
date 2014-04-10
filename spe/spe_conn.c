@@ -76,7 +76,8 @@ spe_conn_connect(spe_conn_t* conn, const char* addr, const char* port, spe_handl
       conn->write_task.handler  = SPE_HANDLER1(connect_start, conn);
       conn->write_type          = SPE_CONN_CONNECT;
       conn->connect_timeout     = 0;
-      spe_task_enqueue(&conn->write_task);
+      connect_start(conn);
+      //spe_task_enqueue(&conn->write_task);
       freeaddrinfo(servinfo);
       return true;
     }
@@ -185,7 +186,8 @@ spe_conn_readuntil(spe_conn_t* conn, char* delim, spe_handler_t handler) {
   conn->read_timeout      = 0;
   conn->delim             = delim;
   conn->read_type         = SPE_CONN_READUNTIL;
-  spe_task_enqueue(&conn->read_task);
+  read_start(conn);
+  //spe_task_enqueue(&conn->read_task);
   return true;
 }
 
@@ -207,11 +209,12 @@ spe_conn_readbytes(spe_conn_t* conn, unsigned len, spe_handler_t handler) {
     return true;
   }
   // (async):
-  conn->read_task.handler = SPE_HANDLER1(read_start, conn);
+  // conn->read_task.handler = SPE_HANDLER1(read_start, conn);
   conn->read_timeout      = 0;
   conn->rbytes            = len;
   conn->read_type         = SPE_CONN_READBYTES;
-  spe_task_enqueue(&conn->read_task);
+  read_start(conn);
+  //spe_task_enqueue(&conn->read_task);
   return true;
 }
 
@@ -233,10 +236,11 @@ spe_conn_read(spe_conn_t* conn, spe_handler_t handler) {
     return true;
   }
   // (async):
-  conn->read_task.handler = SPE_HANDLER1(read_start, conn);
+  //conn->read_task.handler = SPE_HANDLER1(read_start, conn);
   conn->read_timeout      = 0;
   conn->read_type         = SPE_CONN_READ;
-  spe_task_enqueue(&conn->read_task);
+  read_start(conn);
+  //spe_task_enqueue(&conn->read_task);
   return true;
 }
 
@@ -295,9 +299,10 @@ spe_conn_flush(spe_conn_t* conn, spe_handler_t handler) {
     spe_task_enqueue(&conn->write_callback_task);
     return true;
   }
-  conn->write_task.handler  = SPE_HANDLER1(write_start, conn);
+  //conn->write_task.handler  = SPE_HANDLER1(write_start, conn);
   conn->write_type          = SPE_CONN_WRITE;
-  spe_task_enqueue(&conn->write_task);
+  write_start(conn);
+  //spe_task_enqueue(&conn->write_task);
   return true;
 }
 
@@ -322,8 +327,8 @@ spe_conn_create
 spe_conn_t*
 spe_conn_create(unsigned fd) {
   if (unlikely(fd >= MAX_FD)) return NULL;
-  spe_sock_set_block(fd, 0);
   spe_conn_t* conn = &all_conn[fd];
+  spe_sock_set_block(fd, 0);
   conn->fd = fd;
   spe_task_init(&conn->read_task);
   spe_task_init(&conn->write_task);
@@ -375,6 +380,7 @@ spe_conn_destroy
 void
 spe_conn_destroy(spe_conn_t* conn) {
   ASSERT(conn);
-  conn->read_callback_task.handler = SPE_HANDLER1(spe_conn_destroy_common, conn);
-  spe_task_enqueue(&conn->read_callback_task);
+  //conn->read_callback_task.handler = SPE_HANDLER1(spe_conn_destroy_common, conn);
+  //spe_task_enqueue(&conn->read_callback_task);
+  spe_conn_destroy_common(conn);
 }

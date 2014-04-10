@@ -1,6 +1,7 @@
 #ifndef __SPE_SOCK_H 
 #define __SPE_SOCK_H
 
+#define _GNU_SOURCE
 #include <stdbool.h>
 #include <unistd.h>
 #include <sys/types.h>

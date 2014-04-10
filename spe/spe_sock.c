@@ -75,7 +75,7 @@ spe_sock_accept(int sfd) {
   struct sockaddr_in caddr;
   socklen_t caddr_len = 0;
   bzero(&caddr, sizeof(caddr));
-  return accept(sfd, (struct sockaddr*)&caddr, &caddr_len);
+  return accept4(sfd, (struct sockaddr*)&caddr, &caddr_len, SOCK_NONBLOCK);
 }
 
 /*

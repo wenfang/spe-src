@@ -19,7 +19,6 @@ struct spe_epoll_s {
 typedef struct spe_epoll_s spe_epoll_t;
 
 static int          epfd;
-static int          epoll_eventfd;
 static spe_epoll_t  all_epoll[MAX_FD];
 
 /*
@@ -99,30 +98,16 @@ spe_epoll_process(int timeout) {
   // check events
   for (int i=0; i<events_n; i++) {
     struct epoll_event* e = &epEvents[i];
-    if (e->data.fd == epoll_eventfd) {
-      uint64_t u;
-      read(epoll_eventfd, &u, sizeof(uint64_t));
-      continue;
-    }
     spe_epoll_t* epoll_t = &all_epoll[e->data.fd];
     if ((e->events & EPOLLIN) && (epoll_t->mask & SPE_EPOLL_READ)) {
-      spe_task_enqueue(epoll_t->read_task);
+      SPE_HANDLER_CALL(epoll_t->read_task->handler);
+      //spe_task_enqueue(epoll_t->read_task);
     }
     if ((e->events & EPOLLOUT) && (epoll_t->mask & SPE_EPOLL_WRITE)) {
-      spe_task_enqueue(epoll_t->write_task);
+      SPE_HANDLER_CALL(epoll_t->write_task->handler);
+      //spe_task_enqueue(epoll_t->write_task);
     }
   }
-}
-
-/*
-===================================================================================================
-spe_epoll_wakeup
-===================================================================================================
-*/
-void
-spe_epoll_wakeup(void) {
-  uint64_t u = 1;
-  if (write(epoll_eventfd, &u, sizeof(uint64_t)) <= 0) SPE_LOG_ERR("spe_epoll_wakeup error");
 }
 
 /*
@@ -132,31 +117,12 @@ spe_epoll_fork
 */
 void
 spe_epoll_fork(void) {
-  close(epoll_eventfd);
   close(epfd);
   epfd = epoll_create(1024);
-  // create eventfd
-  epoll_eventfd = eventfd(0, 0);
-  spe_sock_set_block(epoll_eventfd, 0);
-  // set eventfd
-  struct epoll_event ee;
-  ee.data.u64 = 0;
-  ee.data.fd  = epoll_eventfd;
-  ee.events   = EPOLLIN;
-  epoll_ctl(epfd, EPOLL_CTL_ADD, epoll_eventfd, &ee);
 }
 
 __attribute__((constructor))
 static void
 epoll_init(void) {
   epfd = epoll_create(1024);
-  // create eventfd
-  epoll_eventfd = eventfd(0, 0);
-  spe_sock_set_block(epoll_eventfd, 0);
-  // set eventfd
-  struct epoll_event ee;
-  ee.data.u64 = 0;
-  ee.data.fd  = epoll_eventfd;
-  ee.events   = EPOLLIN;
-  epoll_ctl(epfd, EPOLL_CTL_ADD, epoll_eventfd, &ee);
 }

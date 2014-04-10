@@ -6,7 +6,6 @@
 #include <pthread.h>
 
 static LIST_HEAD(task_head);
-static pthread_mutex_t  task_lock = PTHREAD_MUTEX_INITIALIZER;
 
 /*
 ===================================================================================================
@@ -41,16 +40,8 @@ spe_task_enqueue
 void
 spe_task_enqueue(spe_task_t* task) {
   ASSERT(task);
-  // double check
   if (!list_empty(&task->task_node)) return;
-  pthread_mutex_lock(&task_lock);
-  if (!list_empty(&task->task_node)) {
-    pthread_mutex_lock(&task_lock);
-    return;
-  }
   list_add_tail(&task->task_node, &task_head);
-  pthread_mutex_unlock(&task_lock);
-  spe_epoll_wakeup();
 }
 
 /*
@@ -61,15 +52,8 @@ spe_task_dequeue
 void
 spe_task_dequeue(spe_task_t* task) {
   ASSERT(task);
-  // double check
   if (list_empty(&task->task_node)) return;
-  pthread_mutex_lock(&task_lock);
-  if (list_empty(&task->task_node)) {
-    pthread_mutex_unlock(&task_lock);
-    return;
-  }
   list_del_init(&task->task_node);
-  pthread_mutex_unlock(&task_lock);
 }
 
 /*
@@ -81,14 +65,8 @@ void
 spe_task_process() {
   // run task
   while (!list_empty(&task_head)) {
-    pthread_mutex_lock(&task_lock);
     spe_task_t* task = list_first_entry(&task_head, spe_task_t, task_node);
-    if (!task) {
-      pthread_mutex_unlock(&task_lock);
-      break;
-    }
     list_del_init(&task->task_node);
-    pthread_mutex_unlock(&task_lock);
     SPE_HANDLER_CALL(task->handler);
   }
 }
