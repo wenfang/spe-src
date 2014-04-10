@@ -12,8 +12,8 @@
 #include <errno.h>
 
 struct spe_epoll_s {
-  spe_handler_t read_handler;
-  spe_handler_t write_handler;
+  spe_task_t*   read_task;
+  spe_task_t*   write_task;
   unsigned      mask:2;             // mask set in epoll
 };
 typedef struct spe_epoll_s spe_epoll_t;
@@ -58,11 +58,12 @@ spe_epoll_enable
 ===================================================================================================
 */
 bool
-spe_epoll_enable(unsigned fd, unsigned mask, spe_handler_t handler) {
+spe_epoll_enable(unsigned fd, unsigned mask, spe_task_t* task) {
+  ASSERT(task);
   if (fd >= MAX_FD) return false;
   spe_epoll_t* epoll_t = &all_epoll[fd];
-  if (mask & SPE_EPOLL_READ) epoll_t->read_handler = handler;
-  if (mask & SPE_EPOLL_WRITE) epoll_t->write_handler = handler;
+  if (mask & SPE_EPOLL_READ) epoll_t->read_task = task;
+  if (mask & SPE_EPOLL_WRITE) epoll_t->write_task = task;
   return epoll_change(fd, epoll_t, epoll_t->mask | mask);
 }
 
@@ -75,8 +76,8 @@ bool
 spe_epoll_disable(unsigned fd, unsigned mask) {
   if (fd >= MAX_FD) return false;
   spe_epoll_t* epoll_t = &all_epoll[fd];
-  if (mask & SPE_EPOLL_READ) epoll_t->read_handler = SPE_HANDLER_NULL;
-  if (mask & SPE_EPOLL_WRITE) epoll_t->write_handler = SPE_HANDLER_NULL;
+  if (mask & SPE_EPOLL_READ) epoll_t->read_task = NULL;
+  if (mask & SPE_EPOLL_WRITE) epoll_t->write_task = NULL;
   return epoll_change(fd, epoll_t, epoll_t->mask & (~mask));
 }
 
@@ -105,10 +106,10 @@ spe_epoll_process(int timeout) {
     }
     spe_epoll_t* epoll_t = &all_epoll[e->data.fd];
     if ((e->events & EPOLLIN) && (epoll_t->mask & SPE_EPOLL_READ)) {
-      spe_task_add(e->data.fd, epoll_t->read_handler);
+      spe_task_enqueue(epoll_t->read_task);
     }
     if ((e->events & EPOLLOUT) && (epoll_t->mask & SPE_EPOLL_WRITE)) {
-      spe_task_add(e->data.fd, epoll_t->write_handler);
+      spe_task_enqueue(epoll_t->write_task);
     }
   }
 }

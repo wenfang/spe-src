@@ -10,15 +10,15 @@
 
 struct spe_conn_s {
   int             fd;
-  spe_timer_t*    read_timer;
-  spe_timer_t*    write_timer;
+  spe_task_t      read_task;
+  spe_task_t      write_task;
   unsigned        read_expire_time;
   unsigned        write_expire_time;
+  spe_task_t      read_callback_task;
+  spe_task_t      write_callback_task;
   spe_string_t*   read_buffer;
   spe_string_t*   write_buffer;
   spe_string_t*   buffer;
-  spe_handler_t   read_handler;
-  spe_handler_t   write_handler;
   char*           delim;
   unsigned        rbytes;
   unsigned        read_type:2;

@@ -1,6 +1,8 @@
 #ifndef __SPE_SERVER_H
 #define __SPE_SERVER_H
 
+#include "spe_task.h"
+
 struct spe_server_s;
 typedef void (*spe_server_Init)(struct spe_server_s*, void*);
 typedef void (*spe_server_Handler)(struct spe_server_s*, unsigned);
@@ -17,6 +19,7 @@ typedef struct spe_server_conf_s spe_server_conf_t;
 struct spe_server_s {
   unsigned            sfd;
   spe_server_Handler  handler;
+  spe_task_t          listen_task;
   void*               data;
 };
 typedef struct spe_server_s spe_server_t;

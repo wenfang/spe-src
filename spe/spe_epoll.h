@@ -1,7 +1,7 @@
 #ifndef __SPE_EPOLL_H
 #define __SPE_EPOLL_H
 
-#include "spe_handler.h"
+#include "spe_task.h"
 #include <stdbool.h>
 
 #define SPE_EPOLL_NONE   0
@@ -10,7 +10,7 @@
 #define SPE_EPOLL_WRITE  2
 
 extern bool
-spe_epoll_enable(unsigned fd, unsigned mask, spe_handler_t handler);
+spe_epoll_enable(unsigned fd, unsigned mask, spe_task_t* task);
 
 extern bool
 spe_epoll_disable(unsigned fd, unsigned mask);

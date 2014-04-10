@@ -1,6 +1,4 @@
 #include "spe_task.h"
-#include "spe_list.h"
-#include "spe_handler.h"
 #include "spe_epoll.h"
 #include "spe_util.h"
 #include "spe_log.h"
@@ -9,13 +7,6 @@
 
 static LIST_HEAD(task_head);
 static pthread_mutex_t  task_lock = PTHREAD_MUTEX_INITIALIZER;
-
-struct spe_task_s {
-  int               key;
-  spe_handler_t     handler;
-  struct list_head  task_node;
-};
-typedef struct spe_task_s spe_task_t;
 
 /*
 ===================================================================================================
@@ -29,20 +20,34 @@ spe_task_empty() {
 
 /*
 ===================================================================================================
-spe_task_add
+spe_task_init
 ===================================================================================================
 */
 void
-spe_task_add(int key, spe_handler_t handler) {
-  spe_task_t* task = calloc(1, sizeof(spe_task_t));
-  if (unlikely(!task)) {
-    SPE_LOG_ERR("spe_task calloc error");
+spe_task_init(spe_task_t* task) {
+  ASSERT(task);
+  task->handler = SPE_HANDLER_NULL;
+  task->expire  = 0;
+  rb_init_node(&task->timer_node);
+  INIT_LIST_HEAD(&task->task_node);
+  task->timeout = 0;
+}
+
+/*
+===================================================================================================
+spe_task_enqueue
+===================================================================================================
+*/
+void
+spe_task_enqueue(spe_task_t* task) {
+  ASSERT(task);
+  // double check
+  if (!list_empty(&task->task_node)) return;
+  pthread_mutex_lock(&task_lock);
+  if (!list_empty(&task->task_node)) {
+    pthread_mutex_lock(&task_lock);
     return;
   }
-  task->key     = key;
-  task->handler = handler;
-  INIT_LIST_HEAD(&task->task_node);
-  pthread_mutex_lock(&task_lock);
   list_add_tail(&task->task_node, &task_head);
   pthread_mutex_unlock(&task_lock);
   spe_epoll_wakeup();
@@ -50,20 +55,20 @@ spe_task_add(int key, spe_handler_t handler) {
 
 /*
 ===================================================================================================
-spe_task_del
+spe_task_dequeue
 ===================================================================================================
 */
 void
-spe_task_del(int key) {
-  spe_task_t* task;
-  spe_task_t* tmp;
+spe_task_dequeue(spe_task_t* task) {
+  ASSERT(task);
+  // double check
+  if (list_empty(&task->task_node)) return;
   pthread_mutex_lock(&task_lock);
-  list_for_each_entry_safe(task, tmp, &task_head, task_node) {
-    if (task->key == key) {
-      list_del_init(&task->task_node);
-      free(task);
-    }
+  if (list_empty(&task->task_node)) {
+    pthread_mutex_unlock(&task_lock);
+    return;
   }
+  list_del_init(&task->task_node);
   pthread_mutex_unlock(&task_lock);
 }
 
@@ -85,6 +90,5 @@ spe_task_process() {
     list_del_init(&task->task_node);
     pthread_mutex_unlock(&task_lock);
     SPE_HANDLER_CALL(task->handler);
-    free(task);
   }
 }

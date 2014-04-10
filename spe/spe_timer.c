@@ -9,59 +9,30 @@ static pthread_mutex_t  timer_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /*
 ===================================================================================================
-spe_timer_create
-===================================================================================================
-*/
-spe_timer_t*
-spe_timer_create() {
-  spe_timer_t* timer = calloc(1, sizeof(spe_timer_t));
-  if (!timer) {
-    SPE_LOG_ERR("calloc error");
-    return NULL;
-  }
-  RB_CLEAR_NODE(&timer->node);
-  return timer;
-}
-
-/*
-===================================================================================================
-spe_timer_destroy
-===================================================================================================
-*/
-void
-spe_timer_destroy(spe_timer_t* timer) {
-  ASSERT(timer);
-  spe_timer_disable(timer);
-  free(timer);
-}
-
-/*
-===================================================================================================
 spe_timer_enable
 ===================================================================================================
 */
 void
-spe_timer_enable(spe_timer_t* timer, unsigned long ms, spe_handler_t handler) {
-  ASSERT(timer);
+spe_timer_enable(spe_task_t* task, unsigned long ms) {
+  ASSERT(task);
   // disable timer if timer is valid
-  spe_timer_disable(timer);
-  timer->expire   = spe_current_time() + ms;
-  timer->handler  = handler;
-  timer->timeout  = 0;
+  spe_timer_disable(task);
+  task->expire  = spe_current_time() + ms;
+  task->timeout = 0;
   // insert into timer list
   pthread_mutex_lock(&timer_list_mutex);
   struct rb_node **new = &timer_list.rb_node, *parent = NULL;
   while (*new) {
-    spe_timer_t* curr = rb_entry(*new, spe_timer_t, node);
+    spe_task_t* curr = rb_entry(*new, spe_task_t, timer_node);
     parent = *new;
-    if (timer->expire < curr->expire) {
+    if (task->expire < curr->expire) {
       new = &((*new)->rb_left);
     } else {
       new = &((*new)->rb_right);
     }
   }
-  rb_link_node(&timer->node, parent, new);
-  rb_insert_color(&timer->node, &timer_list);
+  rb_link_node(&task->timer_node, parent, new);
+  rb_insert_color(&task->timer_node, &timer_list);
   pthread_mutex_unlock(&timer_list_mutex);
 }
 
@@ -71,13 +42,13 @@ spe_timer_disable
 ===================================================================================================
 */
 void
-spe_timer_disable(spe_timer_t* timer) {
-  ASSERT(timer);
-  if (RB_EMPTY_NODE(&timer->node)) return;
+spe_timer_disable(spe_task_t* task) {
+  ASSERT(task);
+  if (RB_EMPTY_NODE(&task->timer_node)) return;
   pthread_mutex_lock(&timer_list_mutex);
-  rb_erase(&timer->node, &timer_list);
+  rb_erase(&task->timer_node, &timer_list);
   pthread_mutex_unlock(&timer_list_mutex);
-  rb_init_node(&timer->node);
+  rb_init_node(&task->timer_node);
 }
 
 /*
@@ -93,14 +64,14 @@ spe_timer_process() {
   pthread_mutex_lock(&timer_list_mutex);
   struct rb_node* first = rb_first(&timer_list);
   while (first) {
-    spe_timer_t* timer = rb_entry(first, spe_timer_t, node);
-    if (timer->expire > curr_time) break;
-    rb_erase(&timer->node, &timer_list);
+    spe_task_t* task = rb_entry(first, spe_task_t, timer_node);
+    if (task->expire > curr_time) break;
+    rb_erase(&task->timer_node, &timer_list);
     pthread_mutex_unlock(&timer_list_mutex);
-    rb_init_node(&timer->node);
+    rb_init_node(&task->timer_node);
     // run timer
-    timer->timeout = 1;
-    SPE_HANDLER_CALL(timer->handler);
+    task->timeout = 1;
+    spe_task_enqueue(task);
     // try next
     pthread_mutex_lock(&timer_list_mutex);
     first = rb_first(&timer_list);

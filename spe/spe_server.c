@@ -38,7 +38,7 @@ spe_server_enable
 void
 spe_server_enable(spe_server_t* srv) {
   ASSERT(srv);
-  spe_epoll_enable(srv->sfd, SPE_EPOLL_LISTEN, SPE_HANDLER1(server_accept, srv));
+  spe_epoll_enable(srv->sfd, SPE_EPOLL_LISTEN, &srv->listen_task);
 }
 
 /*
@@ -55,8 +55,11 @@ spe_server_create(unsigned sfd, spe_server_conf_t* conf) {
     return NULL;
   }
   spe_sock_set_block(sfd, 0);
-  srv->sfd = sfd;
-  srv->handler = conf->handler;
+  srv->sfd      = sfd;
+  srv->handler  = conf->handler;
+  spe_task_init(&srv->listen_task);
+  srv->listen_task.handler = SPE_HANDLER1(server_accept, srv);
+
   if (conf->init) conf->init(srv, conf->arg);
   if (conf->nprocs) {
     spe_spawn(conf->nprocs);
