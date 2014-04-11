@@ -1,7 +1,5 @@
 #include "spe_epoll.h"
 #include "spe_sock.h"
-#include "spe_list.h"
-#include "spe_task.h"
 #include "spe_util.h"
 #include "spe_log.h"
 #include <stdlib.h>

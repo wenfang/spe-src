@@ -17,8 +17,7 @@ spe_shm_alloc(unsigned size) {
     SPE_LOG_ERR("spe shm alloc mmap error");
     free(shm);
     return NULL; 
-  }
-  shm->size = size;
+  } shm->size = size;
   return shm;
 }
 
@@ -29,3 +28,28 @@ spe_shm_free(spe_shm_t* shm) {
     SPE_LOG_ERR("spe_shm_free error");
   }
 }
+
+pthread_mutex_t*
+spe_shmux_create() {
+  pthread_mutex_t* shmux = mmap(NULL, sizeof(pthread_mutex_t), PROT_READ|PROT_WRITE,
+      MAP_ANON|MAP_SHARED, -1, 0);
+  if (!shmux) {
+    SPE_LOG_ERR("spe_shmux_create mmap error");
+    return NULL;
+  }
+  pthread_mutexattr_t mattr;
+  pthread_mutexattr_init(&mattr);
+  pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_SHARED);
+  pthread_mutex_init(shmux, &mattr);
+  return shmux;
+}
+
+void
+spe_shmux_destroy(pthread_mutex_t* shmux) {
+  ASSERT(shmux);
+  pthread_mutex_destroy(shmux);
+  if (munmap(shmux, sizeof(pthread_mutex_t) == -1)) {
+    SPE_LOG_ERR("spe_shmux_destroy error");
+  }
+}
+

@@ -1,6 +1,7 @@
 #ifndef __SPE_SERVER_H
 #define __SPE_SERVER_H
 
+#include "spe_shm.h"
 #include "spe_task.h"
 
 struct spe_server_s;
@@ -21,6 +22,7 @@ struct spe_server_s {
   spe_server_Handler  handler;
   spe_task_t          listen_task;
   void*               data;
+  pthread_mutex_t*    accept_mutex;
 };
 typedef struct spe_server_s spe_server_t;
 

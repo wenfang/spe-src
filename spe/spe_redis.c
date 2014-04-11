@@ -149,6 +149,7 @@ spe_redis_create
 */
 spe_redis_t*
 spe_redis_create(const char* host, const char* port) {
+  // set host and port
   spe_redis_t* sr = calloc(1, sizeof(spe_redis_t));
   if (!sr) {
     SPE_LOG_ERR("spe_redis calloc error");
@@ -156,7 +157,7 @@ spe_redis_create(const char* host, const char* port) {
   }
   sr->host = host;
   sr->port = port;
-
+  // init buffer
   if (!(sr->send_buffer = spe_slist_create())) {
     SPE_LOG_ERR("spe_slist_create error");
     goto failout1;
@@ -184,8 +185,6 @@ spe_redis_destroy(spe_redis_t* sr) {
   ASSERT(sr);
   spe_slist_destroy(sr->send_buffer);
   spe_slist_destroy(sr->recv_buffer);
-  if (sr->conn) {
-    spe_conn_destroy(sr->conn);
-  }
+  if (sr->conn) spe_conn_destroy(sr->conn);
   free(sr);
 }

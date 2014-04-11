@@ -59,6 +59,12 @@ spe_server_create(unsigned sfd, spe_server_conf_t* conf) {
   srv->handler  = conf->handler;
   spe_task_init(&srv->listen_task);
   srv->listen_task.handler = SPE_HANDLER1(server_accept, srv);
+  srv->accept_mutex = spe_shmux_create();
+  if (!srv->accept_mutex) {
+    SPE_LOG_ERR("spe_shmux_create error");
+    free(srv);
+    return NULL;
+  }
 
   if (conf->init) conf->init(srv, conf->arg);
   if (conf->nprocs) {
