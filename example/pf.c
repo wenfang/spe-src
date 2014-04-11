@@ -4,10 +4,12 @@
 
 static spe_server_t* srv;
 
+static int count = 0;
 void
 on_close(void* arg1) {
   spe_conn_t* conn = arg1;
   spe_conn_destroy(conn);
+  if (count++ > 100000) spe_main_stop = 1;
 }
 
 void
@@ -36,7 +38,7 @@ static spe_server_conf_t srv_conf = {
   NULL,
   run,
   0,
-  4,
+  0,
 };
 
 
@@ -56,6 +58,12 @@ pf_init(void) {
   return true;
 }
 
+static bool
+pf_start(void) {
+  spe_server_start(srv);
+  return true;
+}
+
 static void
 pf_before_loop(void) {
   spe_server_before_loop(srv);
@@ -69,7 +77,7 @@ pf_after_loop(void) {
 static spe_module_t pf_module = {
   pf_init,
   NULL,
-  NULL,
+  pf_start,
   NULL, 
   pf_before_loop,
   pf_after_loop,

@@ -35,6 +35,9 @@ extern void
 spe_server_destroy(spe_server_t* srv);
 
 extern void
+spe_server_start(spe_server_t* srv);
+
+extern void
 spe_server_before_loop(spe_server_t* srv);
 
 extern void

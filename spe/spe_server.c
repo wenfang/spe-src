@@ -53,6 +53,12 @@ spe_server_before_loop(spe_server_t* srv) {
   }
 }
 
+void
+spe_server_start(spe_server_t* srv) {
+  if (srv->use_accept_mutex) return;
+  spe_epoll_enable(srv->sfd, SPE_EPOLL_LISTEN, &srv->listen_task);
+}
+
 /*
 ===================================================================================================
 spe_server_create
