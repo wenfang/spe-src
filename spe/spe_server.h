@@ -23,7 +23,8 @@ struct spe_server_s {
   spe_task_t          listen_task;
   void*               data;
   pthread_mutex_t*    accept_mutex;
-  int                 accept_mutex_hold;
+  unsigned            use_accept_mutex;
+  unsigned            accept_mutex_hold;
 };
 typedef struct spe_server_s spe_server_t;
 
@@ -34,8 +35,10 @@ extern void
 spe_server_destroy(spe_server_t* srv);
 
 extern void
-spe_server_enable(spe_server_t* srv);
+spe_server_before_loop(spe_server_t* srv);
 
-extern spe_server_t* MainSrv;
+extern void
+spe_server_after_loop(spe_server_t* srv);
+
 
 #endif

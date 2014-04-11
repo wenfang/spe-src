@@ -12,7 +12,6 @@
 #include "spe_io.h"
 #include "spe_opt.h"
 #include "spe_log.h"
-#include "spe_module.h"
 #include "spe_main.h"
 #include "spe_epoll.h"
 #include "spe_timer.h"

@@ -11,35 +11,6 @@ on_close(void* arg1) {
 }
 
 void
-on_get(void* arg1, void* arg2) {
-  spe_conn_t* conn = arg1;
-  spe_redis_t* red = arg2;
-  for(int i=0; i<red->recv_buffer->len; i++) {
-    spe_conn_write(conn, red->recv_buffer->data[i]);
-  }
-  spe_redis_destroy(red);
-  spe_conn_flush(conn, SPE_HANDLER1(on_close, conn));
-}
-
-void
-on_conn(void* arg1, void* arg2) {
-  spe_conn_t* conn = arg1;
-  spe_redis_t* red = arg2;
-  spe_redis_do(red, SPE_HANDLER2(on_get, conn, red), 2, "get", "mydokey");
-}
-
-void
-on_read(void* arg) {
-  spe_conn_t* conn = arg;
-  if (conn->closed || conn->error) {
-    spe_conn_destroy(conn);
-    return;
-  }
-  spe_redis_t* red = spe_redis_create("127.0.0.1", "6379");
-  spe_redis_connect(red, SPE_HANDLER2(on_conn, conn, red));
-}
-
-void
 on_end(void* arg) {
   spe_conn_t* conn = arg;
   if (conn->closed || conn->error) {
@@ -70,7 +41,7 @@ static spe_server_conf_t srv_conf = {
 
 
 static bool
-pf_base_init(void) {
+pf_init(void) {
   int port = spe_opt_int("pf_base", "port", 7879);
   int sfd = spe_sock_tcp_server("127.0.0.1", port);
   if (sfd < 0) {
@@ -82,25 +53,30 @@ pf_base_init(void) {
     printf("server create error\n");
     return false;
   }
-  MainSrv = srv;
   return true;
 }
 
-static bool
-pf_base_start(void) {
-//  spe_server_enable(srv);
-  return true;
+static void
+pf_before_loop(void) {
+  spe_server_before_loop(srv);
 }
 
-static spe_module_t pf_base_module = {
-  pf_base_init,
+static void
+pf_after_loop(void) {
+  spe_server_after_loop(srv);
+}
+
+static spe_module_t pf_module = {
+  pf_init,
   NULL,
-  pf_base_start,
   NULL,
+  NULL, 
+  pf_before_loop,
+  pf_after_loop,
 };
 
 __attribute__((constructor))
 static void
-__pf_base_init(void) {
-  spe_register_module(&pf_base_module);
+__pf_init(void) {
+  spe_register_module(&pf_module);
 }

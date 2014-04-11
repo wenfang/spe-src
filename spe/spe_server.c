@@ -27,9 +27,10 @@ spe_server_disable
 ===================================================================================================
 */
 void
-spe_server_disable(spe_server_t* srv) {
+spe_server_after_loop(spe_server_t* srv) {
   ASSERT(srv);
-  spe_epoll_disable(srv->sfd, SPE_EPOLL_LISTEN);
+  if (!srv->use_accept_mutex) return;
+  if (srv->accept_mutex_hold) pthread_mutex_unlock(srv->accept_mutex);
 }
 
 /*
@@ -38,8 +39,9 @@ spe_server_enable
 ===================================================================================================
 */
 void
-spe_server_enable(spe_server_t* srv) {
+spe_server_before_loop(spe_server_t* srv) {
   ASSERT(srv);
+  if (!srv->use_accept_mutex) return;
   if (!pthread_mutex_trylock(srv->accept_mutex)) {
     if (srv->accept_mutex_hold) return;
     srv->accept_mutex_hold = 1;
@@ -69,15 +71,16 @@ spe_server_create(unsigned sfd, spe_server_conf_t* conf) {
   srv->handler  = conf->handler;
   spe_task_init(&srv->listen_task);
   srv->listen_task.handler = SPE_HANDLER1(server_accept, srv);
-  srv->accept_mutex = spe_shmux_create();
-  if (!srv->accept_mutex) {
-    SPE_LOG_ERR("spe_shmux_create error");
-    free(srv);
-    return NULL;
-  }
-
   if (conf->init) conf->init(srv, conf->arg);
+
   if (conf->nprocs) {
+    srv->use_accept_mutex = 1;
+    srv->accept_mutex = spe_shmux_create();
+    if (!srv->accept_mutex) {
+      SPE_LOG_ERR("spe_shmux_create error");
+      free(srv);
+      return NULL;
+    }
     spe_spawn(conf->nprocs);
     spe_epoll_fork();
   }
@@ -92,6 +95,7 @@ spe_server_destroy
 void
 spe_server_destroy(spe_server_t* srv) {
   ASSERT(srv);
+  if (srv->use_accept_mutex) spe_shmux_destroy(srv->accept_mutex);
   spe_sock_close(srv->sfd);
   free(srv);
 }
