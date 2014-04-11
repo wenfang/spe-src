@@ -8,6 +8,8 @@
 #include <string.h>
 #include <errno.h>
 
+spe_server_t* MainSrv;
+
 static void
 server_accept(void* arg) {
   spe_server_t* srv = arg;
@@ -38,7 +40,15 @@ spe_server_enable
 void
 spe_server_enable(spe_server_t* srv) {
   ASSERT(srv);
-  spe_epoll_enable(srv->sfd, SPE_EPOLL_LISTEN, &srv->listen_task);
+  if (!pthread_mutex_trylock(srv->accept_mutex)) {
+    if (srv->accept_mutex_hold) return;
+    srv->accept_mutex_hold = 1;
+    spe_epoll_enable(srv->sfd, SPE_EPOLL_LISTEN, &srv->listen_task);
+    return;
+  } else {
+    if (srv->accept_mutex_hold) spe_epoll_disable(srv->sfd, SPE_EPOLL_LISTEN);
+    srv->accept_mutex_hold = 0;
+  }
 }
 
 /*

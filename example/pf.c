@@ -82,12 +82,13 @@ pf_base_init(void) {
     printf("server create error\n");
     return false;
   }
+  MainSrv = srv;
   return true;
 }
 
 static bool
 pf_base_start(void) {
-  spe_server_enable(srv);
+//  spe_server_enable(srv);
   return true;
 }
 

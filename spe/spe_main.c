@@ -1,4 +1,5 @@
 #include "spe_main.h"
+#include "spe_server.h"
 #include "spe_opt.h"
 #include "spe_signal.h"
 #include "spe_module.h"
@@ -50,7 +51,11 @@ int main(int argc, char* argv[]) {
   while (!spe_main_stop) {
     unsigned timeout = 500;
     if (!spe_task_empty()) timeout = 0;
+    spe_server_enable(MainSrv);
     spe_epoll_process(timeout);
+    if (MainSrv->accept_mutex_hold) {
+      pthread_mutex_unlock(MainSrv->accept_mutex);
+    }
     spe_task_process();
     spe_timer_process();
     spe_signal_process();
