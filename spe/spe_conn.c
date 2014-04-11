@@ -13,24 +13,26 @@
 #define SPE_CONN_READBYTES  3
 
 #define SPE_CONN_WRITENONE  0
-#define SPE_CONN_CONNECT    1
 #define SPE_CONN_WRITE      1
+
+#define SPE_CONN_CONNECT    1
 
 static spe_conn_t all_conn[MAX_FD];
 
 static void
 connect_end(spe_conn_t* conn) {
-  spe_epoll_disable(conn->fd, SPE_EPOLL_WRITE);
-  if (conn->write_expire_time) spe_timer_disable(&conn->write_task);
-  conn->write_type = SPE_CONN_WRITENONE;
-  SPE_HANDLER_CALL(conn->write_callback_task.handler);
+  spe_epoll_disable(conn->fd, SPE_EPOLL_READ|SPE_EPOLL_WRITE);
+  if (conn->read_expire_time) spe_timer_disable(&conn->read_task);
+  conn->read_type   = SPE_CONN_READNONE;
+  conn->write_type  = SPE_CONN_WRITENONE;
+  SPE_HANDLER_CALL(conn->read_callback_task.handler);
 }
 
 static void
 connect_common(void* arg) {
   spe_conn_t* conn = arg;
   // connect timeout
-  if (conn->write_expire_time && conn->write_task.timeout) {
+  if (conn->read_expire_time && conn->read_task.timeout) {
     conn->connect_timeout = 1;
     connect_end(conn);
     return;
@@ -46,9 +48,9 @@ connect_common(void* arg) {
 static void
 connect_start(void* arg) {
   spe_conn_t* conn = arg;
-  conn->write_task.handler = SPE_HANDLER1(connect_common, conn);
-  spe_epoll_enable(conn->fd, SPE_EPOLL_WRITE, &conn->write_task);
-  if (conn->write_expire_time) spe_timer_enable(&conn->write_task, conn->write_expire_time);
+  conn->read_task.handler = SPE_HANDLER1(connect_common, conn);
+  spe_epoll_enable(conn->fd, SPE_EPOLL_READ | SPE_EPOLL_WRITE, &conn->read_task);
+  if (conn->read_expire_time) spe_timer_enable(&conn->read_task, conn->write_expire_time);
 }
 
 /*
@@ -58,7 +60,8 @@ spe_conn_connect
 */
 bool
 spe_conn_connect(spe_conn_t* conn, const char* addr, const char* port, spe_handler_t handler) {
-  ASSERT(conn && conn->write_type == SPE_CONN_WRITENONE && addr && port);
+  ASSERT(conn && conn->read_type == SPE_CONN_READNONE && 
+      conn->write_type == SPE_CONN_WRITENONE && addr && port);
   // gen address hints
   struct addrinfo hints;
   memset(&hints, 0, sizeof(hints));
@@ -69,21 +72,22 @@ spe_conn_connect(spe_conn_t* conn, const char* addr, const char* port, spe_handl
   if (getaddrinfo(addr, port, &hints, &servinfo)) return false;
   // try the first address
   if (!servinfo) return false;
-  conn->write_callback_task.handler = handler;
+  conn->read_callback_task.handler = handler;
   if (connect(conn->fd, servinfo->ai_addr, servinfo->ai_addrlen) == -1) {
     if (errno == EINPROGRESS) {
       // (async):
-      conn->write_task.handler  = SPE_HANDLER1(connect_start, conn);
-      conn->write_type          = SPE_CONN_CONNECT;
-      conn->connect_timeout     = 0;
-      spe_task_enqueue(&conn->write_task);
+      conn->read_task.handler = SPE_HANDLER1(connect_start, conn);
+      conn->read_type         = SPE_CONN_CONNECT;
+      conn->write_type        = SPE_CONN_CONNECT;
+      conn->connect_timeout   = 0;
+      spe_task_enqueue(&conn->read_task);
       freeaddrinfo(servinfo);
       return true;
     }
     conn->error = 1;
   }
   // (sync): connect success or failed, call handler
-  spe_task_enqueue(&conn->write_callback_task);
+  spe_task_enqueue(&conn->read_callback_task);
   freeaddrinfo(servinfo);
   return true;
 }

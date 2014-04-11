@@ -84,6 +84,10 @@ on_receive_line(void* arg) {
   if (conn->buffer->data[0] == '$') {
     spe_slist_append(sr->recv_buffer, conn->buffer);
     int resSize = atoi(conn->buffer->data+1);
+    if (resSize <= 0) {
+      SPE_HANDLER_CALL(sr->handler);
+      return;
+    }
     spe_conn_readbytes(conn, resSize+2, SPE_HANDLER1(on_receive_data, sr));
   }
 }
