@@ -344,15 +344,11 @@ spe_conn_create(unsigned fd) {
   }
   spe_string_clean(conn->read_buffer);
   spe_string_clean(conn->write_buffer);
-  spe_string_clean(conn->buffer);
   // init conn status
   conn->read_expire_time  = 0;
   conn->write_expire_time = 0;
   conn->read_type         = SPE_CONN_READNONE;
   conn->write_type        = SPE_CONN_WRITENONE;
-  conn->connect_timeout   = 0;
-  conn->read_timeout      = 0;
-  conn->write_timeout     = 0;
   conn->closed            = 0;
   conn->error             = 0;
   return conn;
@@ -361,8 +357,12 @@ spe_conn_create(unsigned fd) {
 static void
 spe_conn_destroy_common(void* arg) {
   spe_conn_t* conn = arg;
-  spe_timer_disable(&conn->read_task);
-  spe_timer_disable(&conn->write_task);
+  spe_task_dequeue(&conn->read_task);
+  spe_task_dequeue(&conn->write_task);
+  spe_task_dequeue(&conn->read_callback_task);
+  spe_task_dequeue(&conn->write_callback_task);
+  if (conn->read_expire_time) spe_timer_disable(&conn->read_task);
+  if (conn->write_expire_time) spe_timer_disable(&conn->write_task);
   spe_epoll_disable(conn->fd, SPE_EPOLL_READ | SPE_EPOLL_WRITE);
   spe_sock_close(conn->fd);
 }

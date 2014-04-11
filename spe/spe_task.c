@@ -30,6 +30,7 @@ spe_task_init(spe_task_t* task) {
   task->expire  = 0;
   rb_init_node(&task->timer_node);
   INIT_LIST_HEAD(&task->task_node);
+  task->inqueue = 0;
   task->timeout = 0;
 }
 
@@ -42,13 +43,14 @@ void
 spe_task_enqueue(spe_task_t* task) {
   ASSERT(task);
   // double check
-  if (!list_empty(&task->task_node)) return;
+  if (task->inqueue) return;
   pthread_mutex_lock(&task_lock);
-  if (!list_empty(&task->task_node)) {
+  if (task->inqueue) {
     pthread_mutex_lock(&task_lock);
     return;
   }
   list_add_tail(&task->task_node, &task_head);
+  task->inqueue = 1;
   pthread_mutex_unlock(&task_lock);
   spe_epoll_wakeup();
 }
@@ -62,13 +64,14 @@ void
 spe_task_dequeue(spe_task_t* task) {
   ASSERT(task);
   // double check
-  if (list_empty(&task->task_node)) return;
+  if (!task->inqueue) return;
   pthread_mutex_lock(&task_lock);
-  if (list_empty(&task->task_node)) {
+  if (!task->inqueue) {
     pthread_mutex_unlock(&task_lock);
     return;
   }
   list_del_init(&task->task_node);
+  task->inqueue = 0;
   pthread_mutex_unlock(&task_lock);
 }
 
@@ -88,6 +91,7 @@ spe_task_process() {
       break;
     }
     list_del_init(&task->task_node);
+    task->inqueue = 0;
     pthread_mutex_unlock(&task_lock);
     SPE_HANDLER_CALL(task->handler);
   }

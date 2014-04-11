@@ -11,6 +11,7 @@ struct spe_task_s {
   unsigned long     expire;
   struct rb_node    timer_node;
   struct list_head  task_node;
+  unsigned          inqueue:1;    // task in running queue?
   unsigned          timeout:1;
 };
 typedef struct spe_task_s spe_task_t;

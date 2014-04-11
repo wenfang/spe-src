@@ -94,9 +94,9 @@ spe_string_copys(spe_string_t* dst, const char* src) {
 static inline void 
 spe_string_clean(spe_string_t* str) {
   ASSERT(str);
-  str->data           = str->_start;
-  str->len            = 0;
-  str->data[str->len] = 0;
+  str->data     = str->_start;
+  str->len      = 0;
+  str->data[0]  = 0;
 }
 
 static inline void 
