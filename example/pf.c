@@ -9,7 +9,7 @@ void
 on_close(void* arg1) {
   spe_conn_t* conn = arg1;
   spe_conn_destroy(conn);
-  if (count++ > 100000) spe_main_stop = 1;
+  if (count++ > 1000000) spe_main_stop = 1;
 }
 
 void
@@ -38,7 +38,7 @@ static spe_server_conf_t srv_conf = {
   NULL,
   run,
   0,
-  0,
+  4,
 };
 
 

@@ -314,6 +314,26 @@ spe_conn_set_timeout(spe_conn_t* conn, unsigned read_expire_time, unsigned write
   return true;
 }
 
+static bool
+conn_init(spe_conn_t* conn, unsigned fd) {
+  conn->fd = fd;
+  spe_task_init(&conn->read_task);
+  spe_task_init(&conn->write_task);
+  spe_task_init(&conn->read_callback_task);
+  spe_task_init(&conn->write_callback_task);
+  conn->read_buffer = spe_string_create(BUF_SIZE);
+  conn->write_buffer = spe_string_create(BUF_SIZE);
+  conn->buffer = spe_string_create(BUF_SIZE);
+  if (!conn->read_buffer || !conn->write_buffer || !conn->buffer) {
+    spe_string_destroy(conn->read_buffer);
+    spe_string_destroy(conn->write_buffer);
+    spe_string_destroy(conn->buffer);
+    return false;
+  }
+  conn->init = 1;
+  return true;
+}
+
 /*
 ===================================================================================================
 spe_conn_create
@@ -324,22 +344,8 @@ spe_conn_create(unsigned fd) {
   if (unlikely(fd >= MAX_FD)) return NULL;
   spe_sock_set_block(fd, 0);
   spe_conn_t* conn = &all_conn[fd];
-  conn->fd = fd;
-  spe_task_init(&conn->read_task);
-  spe_task_init(&conn->write_task);
-  spe_task_init(&conn->read_callback_task);
-  spe_task_init(&conn->write_callback_task);
-  // init buffer
-  if (!conn->read_buffer && !(conn->read_buffer = spe_string_create(BUF_SIZE))) {
-    SPE_LOG_ERR("spe_string_create error");
-    return NULL;
-  }
-  if (!conn->write_buffer && !(conn->write_buffer = spe_string_create(BUF_SIZE))) {
-    SPE_LOG_ERR("spe_string_create error");
-    return NULL;
-  }
-  if (!conn->buffer && !(conn->buffer = spe_string_create(BUF_SIZE))) {
-    SPE_LOG_ERR("spe_string_create error");
+  if (!conn->init && !conn_init(conn, fd)) {
+    SPE_LOG_ERR("conn_init error");
     return NULL;
   }
   spe_string_clean(conn->read_buffer);

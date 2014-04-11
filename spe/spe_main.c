@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
   }
   while (!spe_main_stop) {
     unsigned timeout = 500;
-    if (!spe_task_empty()) timeout = 0;
+    if (g_task_num) timeout = 0;
     if (MainMod->before_loop) MainMod->before_loop();
     spe_epoll_process(timeout);
     if (MainMod->after_loop) MainMod->after_loop();

@@ -16,8 +16,7 @@ struct spe_task_s {
 };
 typedef struct spe_task_s spe_task_t;
 
-extern bool
-spe_task_empty();
+extern unsigned g_task_num;
 
 extern void
 spe_task_init(spe_task_t* task);

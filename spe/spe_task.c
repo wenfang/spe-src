@@ -5,18 +5,10 @@
 #include <stdlib.h>
 #include <pthread.h>
 
+unsigned g_task_num;
+
 static LIST_HEAD(task_head);
 static pthread_mutex_t  task_lock = PTHREAD_MUTEX_INITIALIZER;
-
-/*
-===================================================================================================
-spe_task_empty
-===================================================================================================
-*/
-bool
-spe_task_empty() {
-  return list_empty(&task_head);
-}
 
 /*
 ===================================================================================================
@@ -51,6 +43,7 @@ spe_task_enqueue(spe_task_t* task) {
   }
   list_add_tail(&task->task_node, &task_head);
   task->inqueue = 1;
+  g_task_num++;
   pthread_mutex_unlock(&task_lock);
   spe_epoll_wakeup();
 }
@@ -72,6 +65,7 @@ spe_task_dequeue(spe_task_t* task) {
   }
   list_del_init(&task->task_node);
   task->inqueue = 0;
+  g_task_num--;
   pthread_mutex_unlock(&task_lock);
 }
 
@@ -83,7 +77,7 @@ spe_task_process
 void
 spe_task_process() {
   // run task
-  while (!list_empty(&task_head)) {
+  while (g_task_num) {
     pthread_mutex_lock(&task_lock);
     spe_task_t* task = list_first_entry(&task_head, spe_task_t, task_node);
     if (!task) {
@@ -92,6 +86,7 @@ spe_task_process() {
     }
     list_del_init(&task->task_node);
     task->inqueue = 0;
+    g_task_num--;
     pthread_mutex_unlock(&task_lock);
     SPE_HANDLER_CALL(task->handler);
   }
