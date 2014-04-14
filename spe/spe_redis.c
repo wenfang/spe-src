@@ -5,120 +5,89 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-static void
-on_connect(void* arg) {
-  spe_redis_t* sr = arg;
-  spe_conn_t* conn = sr->conn;
-  if (conn->error) sr->error = 1;
-  if (conn->closed) sr->closed = 1;
-  if (sr->error || sr->closed) {
-    spe_conn_destroy(sr->conn);
-    sr->conn = NULL;
-  }
-  SPE_HANDLER_CALL(sr->handler);
-}
+#define SPE_REDIS_INIT      0
+#define SPE_REDIS_CONN      1
+#define SPE_REDIS_SEND      2
+#define SPE_REDIS_RECV_LINE 3
+#define SPE_REDIS_RECV_DATA 4
 
-/*
-===================================================================================================
-spe_redis_connect
-===================================================================================================
-*/
-bool
-spe_redis_connect(spe_redis_t* sr, spe_handler_t handler) {
-  ASSERT(sr && sr->host && sr->port);
-  if (sr->conn) {
+static void 
+driver_machine(spe_redis_t* sr) {
+  if (sr->status != SPE_REDIS_INIT && (sr->conn->error || sr->conn->closed)) {
+    sr->error = 1;
     spe_conn_destroy(sr->conn);
     sr->conn = NULL;
-  }
-  int cfd = spe_sock_tcp_socket();
-  if (cfd < 0) {
-    SPE_LOG_ERR("spe_sock_tcp_socket error");
-    return false;
-  }
-  if (!(sr->conn = spe_conn_create(cfd))) {
-    SPE_LOG_ERR("spe_conn_create error");
-    spe_sock_close(cfd);
-    return false;
-  }
-  sr->handler = handler;
-  sr->closed  = 0;
-  sr->error   = 0;
-  spe_conn_connect(sr->conn, sr->host, sr->port, SPE_HANDLER1(on_connect, sr));
-  return true;
-}
-
-static void
-on_receive_data(void* arg) {
-  spe_redis_t* sr = arg;
-  spe_conn_t* conn = sr->conn;
-  if (conn->error) sr->error = 1;
-  if (conn->closed) sr->closed = 1;
-  if (sr->error || sr->closed) {
-    spe_conn_destroy(sr->conn);
-    sr->conn = NULL;
-  }
-  spe_slist_appendb(sr->recv_buffer, conn->buffer->data, conn->buffer->len-2);
-  SPE_HANDLER_CALL(sr->handler);
-}
-
-static void
-on_receive_line(void* arg) {
-  spe_redis_t* sr = arg;
-  spe_conn_t* conn = sr->conn;
-  if (conn->error) sr->error = 1;
-  if (conn->closed) sr->closed = 1;
-  if (sr->error || sr->closed) {
-    spe_conn_destroy(sr->conn);
-    sr->conn = NULL;
+    sr->status = SPE_REDIS_INIT;
     SPE_HANDLER_CALL(sr->handler);
     return;
   }
-  // one line response
-  if (conn->buffer->data[0] == '+' || conn->buffer->data[0] == '-' ||
-      conn->buffer->data[0] == ':') {
-    spe_slist_append(sr->recv_buffer, conn->buffer);
-    SPE_HANDLER_CALL(sr->handler);
-    return;
-  }
-  // block data
-  if (conn->buffer->data[0] == '$') {
-    spe_slist_append(sr->recv_buffer, conn->buffer);
-    int resSize = atoi(conn->buffer->data+1);
-    if (resSize <= 0) {
-      SPE_HANDLER_CALL(sr->handler);
-      return;
-    }
-    spe_conn_readbytes(conn, resSize+2, SPE_HANDLER1(on_receive_data, sr));
-  }
-}
-
-static void
-on_send(void* arg) {
-  spe_redis_t* sr = arg;
-  spe_conn_t* conn = sr->conn;
-  if (conn->error) sr->error = 1;
-  if (conn->closed) sr->closed = 1;
-  if (sr->error || sr->closed) {
-    spe_conn_destroy(sr->conn);
-    sr->conn = NULL;
-    SPE_HANDLER_CALL(sr->handler);
-    return;
-  }
-  spe_conn_readuntil(conn, "\r\n", SPE_HANDLER1(on_receive_line, sr));
-}
-
-static void
-spe_redis_send(spe_redis_t* sr) {
-  ASSERT(sr->conn);
-  ASSERT(sr->conn->read_type == 0 && sr->conn->write_type == 0);
+  int cfd;
   char buf[1024];
-  sprintf(buf, "*%d\r\n", sr->send_buffer->len);
-  spe_conn_writes(sr->conn, buf);
-  for (int i=0; i<sr->send_buffer->len; i++) {
-    sprintf(buf, "$%d\r\n%s\r\n", sr->send_buffer->data[i]->len, sr->send_buffer->data[i]->data);
-    spe_conn_writes(sr->conn, buf);
+  switch (sr->status) {
+    case SPE_REDIS_INIT:
+      cfd = spe_sock_tcp_socket();
+      if (cfd < 0) {
+        SPE_LOG_ERR("spe_sock_tcp_socket error");
+        sr->error = 1;
+        SPE_HANDLER_CALL(sr->handler);
+        return;
+      }
+      if (!(sr->conn = spe_conn_create(cfd))) {
+        SPE_LOG_ERR("spe_conn_create error");
+        spe_sock_close(cfd);
+        sr->error = 1;
+        SPE_HANDLER_CALL(sr->handler);
+        return;
+      }
+      sr->error = 0;
+      sr->status = SPE_REDIS_CONN;
+      spe_conn_connect(sr->conn, sr->host, sr->port, SPE_HANDLER1(driver_machine, sr));
+      break;
+    case SPE_REDIS_CONN:
+      // send request
+      sprintf(buf, "*%d\r\n", sr->send_buffer->len);
+      spe_conn_writes(sr->conn, buf);
+      for (int i=0; i<sr->send_buffer->len; i++) {
+        sprintf(buf, "$%d\r\n%s\r\n", sr->send_buffer->data[i]->len, sr->send_buffer->data[i]->data);
+        spe_conn_writes(sr->conn, buf);
+      }
+      sr->status = SPE_REDIS_SEND;
+      spe_conn_flush(sr->conn, SPE_HANDLER1(driver_machine, sr));
+    case SPE_REDIS_SEND:
+      sr->status = SPE_REDIS_RECV_LINE;
+      spe_conn_readuntil(sr->conn, "\r\n", SPE_HANDLER1(driver_machine, sr));
+      break;
+    case SPE_REDIS_RECV_LINE:
+      if (sr->conn->buffer->data[0] == '+' || sr->conn->buffer->data[0] == '-' ||
+          sr->conn->buffer->data[0] == ':') {
+        spe_slist_append(sr->recv_buffer, sr->conn->buffer);
+        sr->status = SPE_REDIS_CONN;
+        SPE_HANDLER_CALL(sr->handler);
+        return;
+      }
+      if (sr->conn->buffer->data[0] == '$') {
+        spe_slist_append(sr->recv_buffer, sr->conn->buffer);
+        int resSize = atoi(sr->conn->buffer->data+1);
+        if (resSize <= 0) {
+          sr->status = SPE_REDIS_CONN;
+          SPE_HANDLER_CALL(sr->handler);
+          return;
+        }
+        sr->status = SPE_REDIS_RECV_DATA;
+        spe_conn_readbytes(sr->conn, resSize+2, SPE_HANDLER1(driver_machine, sr));
+        return;
+      }
+      if (sr->conn->buffer->data[0] == '*') {
+        // TODO: ADD BLOCK SUPPOR
+        return;
+      }
+      break;
+    case SPE_REDIS_RECV_DATA:
+      spe_slist_appendb(sr->recv_buffer, sr->conn->buffer->data, sr->conn->buffer->len-2);
+      sr->status = SPE_REDIS_CONN;
+      SPE_HANDLER_CALL(sr->handler);
+      break;
   }
-  spe_conn_flush(sr->conn, SPE_HANDLER1(on_send, sr));
 }
 
 /*
@@ -126,18 +95,13 @@ spe_redis_send(spe_redis_t* sr) {
 spe_redis_do
 ===================================================================================================
 */
-bool
+void
 spe_redis_do(spe_redis_t* sr, spe_handler_t handler, int nargs, ...) {
   ASSERT(sr && nargs>0);
-  ASSERT(sr->conn);
-  ASSERT(sr->conn->read_type == 0 && sr->conn->write_type == 0);
-  if (!sr->conn) return false;
   // init redis for new command
   sr->handler = handler;
   spe_slist_clean(sr->send_buffer);
   spe_slist_clean(sr->recv_buffer);
-  ASSERT(sr->conn);
-  ASSERT(sr->conn->read_type == 0 && sr->conn->write_type == 0);
   // generate send command
   char* key;
   va_list ap;
@@ -145,15 +109,10 @@ spe_redis_do(spe_redis_t* sr, spe_handler_t handler, int nargs, ...) {
   for (int i=0; i<nargs; i++) {
     key = va_arg(ap, char*);
     spe_slist_appends(sr->send_buffer, key);
-    ASSERT(sr->conn);
-    ASSERT(sr->conn->read_type == 0 && sr->conn->write_type == 0);
   }
   key = va_arg(ap, char*);
   va_end(ap);
-  ASSERT(sr->conn);
-  ASSERT(sr->conn->read_type == 0 && sr->conn->write_type == 0);
-  spe_redis_send(sr);
-  return true;
+  driver_machine(sr);
 }
 
 /*
@@ -163,6 +122,7 @@ spe_redis_create
 */
 spe_redis_t*
 spe_redis_create(const char* host, const char* port) {
+  ASSERT(host && port);
   // set host and port
   spe_redis_t* sr = calloc(1, sizeof(spe_redis_t));
   if (!sr) {
@@ -180,6 +140,7 @@ spe_redis_create(const char* host, const char* port) {
     SPE_LOG_ERR("spe_slist_create error");
     goto failout2;
   }
+  sr->status = SPE_REDIS_INIT;
   return sr;
 
 failout2:

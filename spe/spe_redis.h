@@ -12,15 +12,12 @@ struct spe_redis_s {
   spe_handler_t handler;
   spe_slist_t*  send_buffer;
   spe_slist_t*  recv_buffer;
-  unsigned      closed:1;
+  unsigned      status:7;
   unsigned      error:1;
 };
 typedef struct spe_redis_s spe_redis_t;
 
-extern bool
-spe_redis_connect(spe_redis_t* sr, spe_handler_t handler);
-
-extern bool
+extern void
 spe_redis_do(spe_redis_t* sr, spe_handler_t handler, int nargs, ...);
 
 extern spe_redis_t*
