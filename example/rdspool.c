@@ -7,7 +7,6 @@ static spe_pool_t* pool;
 #define RDS_INIT  0
 #define RDS_GET   1
 #define RDS_CLOSE 2
-#define RDS_CONN  3
 
 struct spe_rds_s {
   spe_conn_t*   conn;
@@ -17,73 +16,9 @@ struct spe_rds_s {
 typedef struct spe_rds_s spe_rds_t;
 
 static void
-on_close(void* arg1, void* arg2) {
-  spe_conn_t* conn = arg1;
-  spe_redis_t* red = arg2;
-  if (red) {
-    ASSERT(red->conn);
-    ASSERT(red->conn->read_type == 0 && red->conn->write_type == 0);
-    spe_pool_put(pool, red);
-  }
-  spe_conn_destroy(conn);
-}
-
-static void
-on_get(void* arg1, void* arg2) {
-  spe_conn_t* conn = arg1;
-  spe_redis_t* red = arg2;
-  if (red->closed || red->error) {
-    spe_conn_writes(conn, "ERROR on_get\r\n");
-    spe_conn_flush(conn, SPE_HANDLER2(on_close, conn, NULL));
-    spe_redis_destroy(red);
-    return;
-  }
-  for (int i=0; i<red->recv_buffer->len; i++) {
-    spe_conn_write(conn, red->recv_buffer->data[i]);
-  }
-  spe_conn_flush(conn, SPE_HANDLER2(on_close, conn, red));
-}
-
-static void
-on_redis_connect(void* arg1, void* arg2) {
-  spe_conn_t* conn = arg1;
-  spe_redis_t* red = arg2;
-  if (red->closed || red->error) {
-    spe_conn_writes(conn, "ERROR CONNECT REDIS SERVER\r\n");
-    spe_conn_flush(conn, SPE_HANDLER2(on_close, conn, NULL));
-    return;
-  }
-  ASSERT(red->conn);
-  ASSERT(red->conn->read_type == 0 && red->conn->write_type == 0);
-  bool res = spe_redis_do(red, SPE_HANDLER2(on_get, conn, red), 2, "get", "mydokey");
-  ASSERT(res);
-}
-
-static void
-on_read(void* arg) {
-  spe_conn_t* conn = arg;
-  spe_redis_t* red = spe_pool_get(pool);
-  bool res;
-  if (red) {
-    ASSERT(red->conn);
-    ASSERT(red->conn->read_type == 0 && red->conn->write_type == 0);
-    res = spe_redis_do(red, SPE_HANDLER2(on_get, conn, red), 2, "get", "mydokey");
-    ASSERT(res);
-    return;
-  }
-  red = spe_redis_create("127.0.0.1", "6379");
-  if (!red) {
-    spe_conn_writes(conn, "ERROR CREATE REDIS CLIENT\r\n");
-    spe_conn_flush(conn, SPE_HANDLER2(on_close, conn, NULL));
-    return;
-  }
-  spe_redis_connect(red, SPE_HANDLER2(on_redis_connect, conn, red));
-}
-
-static void
 drive_machine(void* arg) {
   spe_rds_t* rds = arg;
-  if (rds->red && (rds->red->closed || rds->red->error) && rds->status != RDS_CLOSE) {
+  if (rds->red && rds->red->error && rds->status != RDS_CLOSE) {
     rds->status = RDS_CLOSE;
     spe_conn_writes(rds->conn, "ERROR GET DATA\r\n");
     spe_conn_flush(rds->conn, SPE_HANDLER1(drive_machine, rds));
@@ -99,20 +34,17 @@ drive_machine(void* arg) {
         return;
       }
       rds->red = spe_pool_get(pool);
-      if (rds->red) {
-        rds->status = RDS_GET;
-        spe_redis_do(rds->red, SPE_HANDLER1(drive_machine, rds), 2, "get", "mydokey");
-        return;
-      }
-      rds->red = spe_redis_create("127.0.0.1", "6379");
       if (!rds->red) {
-        rds->status = RDS_CLOSE;
-        spe_conn_writes(rds->conn, "ERROR CREATE REDIS CLIENT\r\n");
-        spe_conn_flush(rds->conn, SPE_HANDLER1(drive_machine, rds));
-        return;
+        rds->red = spe_redis_create("127.0.0.1", "6379");
+        if (!rds->red) {
+          rds->status = RDS_CLOSE;
+          spe_conn_writes(rds->conn, "ERROR CREATE REDIS CLIENT\r\n");
+          spe_conn_flush(rds->conn, SPE_HANDLER1(drive_machine, rds));
+          return;
+        }
       }
-      rds->status = RDS_CONN;
-      spe_redis_connect(rds->red, SPE_HANDLER1(drive_machine, rds));
+      rds->status = RDS_GET;
+      spe_redis_do(rds->red, SPE_HANDLER1(drive_machine, rds), 2, "get", "mydokey");
       break;
     case RDS_GET:
       for (int i=0; i<rds->red->recv_buffer->len; i++) {
@@ -126,15 +58,11 @@ drive_machine(void* arg) {
       spe_conn_destroy(rds->conn);
       free(rds);
       break;
-    case RDS_CONN:
-      rds->status = RDS_GET;
-      spe_redis_do(rds->red, SPE_HANDLER1(drive_machine, rds), 2, "get", "mydokey");
-      break;
   }
 }
 
 static void
-run1(spe_server_t* srv, unsigned cfd) {
+run(spe_server_t* srv, unsigned cfd) {
   spe_conn_t* conn = spe_conn_create(cfd);
   if (!conn) {
     SPE_LOG_ERR("spe_conn_create error");
@@ -152,20 +80,10 @@ run1(spe_server_t* srv, unsigned cfd) {
   spe_conn_readuntil(conn, "\r\n\r\n", SPE_HANDLER1(drive_machine, rds));
 }
 
-void
-run(spe_server_t* srv, unsigned cfd) {
-  spe_conn_t* conn = spe_conn_create(cfd);
-  if (!conn) {
-    spe_sock_close(cfd);
-    return;
-  }
-  spe_conn_readuntil(conn, "\r\n\r\n", SPE_HANDLER1(on_read, conn));
-}
-
 static spe_server_conf_t srv_conf = {
   NULL,
   NULL,
-  run1,
+  run,
   0,
   0,
 };

@@ -13,7 +13,7 @@ static void
 on_get(void* arg1, void* arg2) {
   spe_conn_t* conn = arg1;
   spe_redis_t* red = arg2;
-  if (red->closed || red->error) {
+  if (red->error) {
     spe_conn_writes(conn, "ERROR on_get\r\n");
     spe_conn_flush(conn, SPE_HANDLER1(on_close, conn));
     return;
@@ -26,18 +26,6 @@ on_get(void* arg1, void* arg2) {
 }
 
 static void
-on_redis_connect(void* arg1, void* arg2) {
-  spe_conn_t* conn = arg1;
-  spe_redis_t* red = arg2;
-  if (red->closed || red->error) {
-    spe_conn_writes(conn, "ERROR CONNECT REDIS SERVER\r\n");
-    spe_conn_flush(conn, SPE_HANDLER1(on_close, conn));
-    return;
-  }
-  spe_redis_do(red, SPE_HANDLER2(on_get, conn, red), 2, "get", "mydokey");
-}
-
-static void
 on_read(void* arg) {
   spe_conn_t* conn = arg;
   spe_redis_t* red = spe_redis_create("127.0.0.1", "6379");
@@ -46,7 +34,7 @@ on_read(void* arg) {
     spe_conn_flush(conn, SPE_HANDLER1(on_close, conn));
     return;
   }
-  spe_redis_connect(red, SPE_HANDLER2(on_redis_connect, conn, red));
+  spe_redis_do(red, SPE_HANDLER2(on_get, conn, red), 2, "get", "mydokey");
 }
 
 static void
