@@ -1,64 +1,63 @@
-#include "mjvec.h"
+#include "spe_pool.h"
+#include "spe_util.h"
 #include <stdlib.h>
 
 /*
-===============================================================================
-mjvec_ready
-  mjvec ready need_size
-===============================================================================
+===================================================================================================
+spe_pool_get
+===================================================================================================
 */
-static bool mjvec_ready(mjvec vec, unsigned int need_size) {
-  // vec is enough
-  unsigned int total = vec->_total;
-  if (need_size <= total) return true;
-  // realloc space
-  vec->_total = 30 + need_size + (need_size >> 3);
-  void** new_obj = (void**) realloc(vec->_obj, vec->_total * sizeof(void*));
-  if (!new_obj) {
-    vec->_total = total;
-    return false;
-  }
-  // copy new_ndata
-  vec->_obj = new_obj;
-  for (int i = vec->len; i < vec->_total; i++) vec->_obj[i] = NULL; 
-  return true;
+void*
+spe_pool_get(spe_pool_t* pool) {
+  ASSERT(pool);
+  if (pool->len <= 0) return NULL;
+  return pool->data[pool->len--];
 }
 
 /*
-===============================================================================
-mjvec_readplus
-===============================================================================
+===================================================================================================
+spe_pool_put
+===================================================================================================
 */
-static inline bool mjvec_readyplus(mjvec vec, unsigned int n) {
-  return mjvec_ready(vec, vec->len + n);
+void
+spe_pool_put(spe_pool_t* pool, void* obj) {
+  ASSERT(pool && obj);
+  pool->data[pool->len++] = obj;
 }
 
-bool mjvec_add(mjvec vec, void* value) {
-  if (!vec || !value) return false;
-  if (!mjvec_readyplus(vec, 1)) return false;
-  vec->_obj[vec->len] = value;
-  vec->len++;
-  return true;
-}
-
-void* mjvec_get(mjvec vec, unsigned int idx) {
-  if (!vec || idx >= vec->len) return NULL;
-  return vec->_obj[idx];
-}
-
-mjvec mjvec_new(mjProc obj_free) {
-  mjvec vec = (mjvec) calloc(1, sizeof(struct mjvec));
-  if (!vec) return NULL;
-  vec->_obj_free = obj_free;
-  return vec;
-}
-
-bool mjvec_delete(mjvec vec) {
-  if (!vec) return false;
-  for (int i = 0; i < vec->len; i++) {
-    if (vec->_obj_free && vec->_obj[i]) vec->_obj_free(vec->_obj[i]);
+/*
+===================================================================================================
+spe_pool_create
+===================================================================================================
+*/
+spe_pool_t*
+spe_pool_create(unsigned total, spe_pool_Free handler) {
+  spe_pool_t* pool = calloc(1, sizeof(spe_pool_t));
+  if (!pool) {
+    SPE_LOG_ERR("calloc spe_pool_t error");
+    return NULL;
   }
-  free(vec->_obj);
-  free(vec);
-  return true;
+  pool->total = total;
+  pool->data = calloc(pool->total, sizeof(void*));
+  if (!pool->data) {
+    SPE_LOG_ERR("pool data alloc error");
+    free(pool);
+    return NULL; 
+  }
+  return pool;
+}
+
+/*
+===================================================================================================
+spe_pool_destroy
+===================================================================================================
+*/
+void
+spe_pool_destroy(spe_pool_t* pool) {
+  ASSERT(pool);
+  for (int i=0; i<pool->len; i++) {
+    if (pool->handler) pool->handler(pool->data[i]);
+  }
+  free(pool->data);
+  free(pool);
 }

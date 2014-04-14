@@ -1,8 +1,6 @@
 #ifndef __SPE_POOL_H
 #define __SPE_POOL_H
 
-#include <stdbool.h>
-
 typedef void (*spe_pool_Free)(void*);
 
 struct spe_pool_s {
