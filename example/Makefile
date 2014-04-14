@@ -1,14 +1,18 @@
 BUILD=../build
 INCLUDE=../spe
-OBJS=pf.o
+OBJS=pf.o rds.o rdspool.o
 
 .c.o:
-	gcc -pg -g -fPIC -std=gnu99 -pthread -Wall -I$(INCLUDE) -c $< -o $@
+	gcc -DDEBUG -pg -g -fPIC -std=gnu99 -pthread -Wall -I$(INCLUDE) -c $< -o $@
 
 all:$(OBJS)
-	gcc -pg -g -fPIC -std=gnu99 -lpthread -Wall $(OBJS) $(BUILD)/libspe.a -o pf
+	gcc -DDEBUG -pg -g -fPIC -std=gnu99 -lpthread -Wall pf.o $(BUILD)/libspe.a -o pf
+	gcc -DDEBUG -pg -g -fPIC -std=gnu99 -lpthread -Wall rds.o $(BUILD)/libspe.a -o rds
+	gcc -DDEBUG -pg -g -fPIC -std=gnu99 -lpthread -Wall rdspool.o $(BUILD)/libspe.a -o rdspool
 
 clean:
 	rm -rf $(OBJS)
 	rm -rf gmon.out
 	rm -rf pf
+	rm -rf rds
+	rm -rf rdspool

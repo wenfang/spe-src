@@ -109,6 +109,8 @@ on_send(void* arg) {
 
 static void
 spe_redis_send(spe_redis_t* sr) {
+  ASSERT(sr->conn);
+  ASSERT(sr->conn->read_type == 0 && sr->conn->write_type == 0);
   char buf[1024];
   sprintf(buf, "*%d\r\n", sr->send_buffer->len);
   spe_conn_writes(sr->conn, buf);
@@ -127,11 +129,15 @@ spe_redis_do
 bool
 spe_redis_do(spe_redis_t* sr, spe_handler_t handler, int nargs, ...) {
   ASSERT(sr && nargs>0);
+  ASSERT(sr->conn);
+  ASSERT(sr->conn->read_type == 0 && sr->conn->write_type == 0);
   if (!sr->conn) return false;
   // init redis for new command
   sr->handler = handler;
   spe_slist_clean(sr->send_buffer);
   spe_slist_clean(sr->recv_buffer);
+  ASSERT(sr->conn);
+  ASSERT(sr->conn->read_type == 0 && sr->conn->write_type == 0);
   // generate send command
   char* key;
   va_list ap;
@@ -139,9 +145,13 @@ spe_redis_do(spe_redis_t* sr, spe_handler_t handler, int nargs, ...) {
   for (int i=0; i<nargs; i++) {
     key = va_arg(ap, char*);
     spe_slist_appends(sr->send_buffer, key);
+    ASSERT(sr->conn);
+    ASSERT(sr->conn->read_type == 0 && sr->conn->write_type == 0);
   }
   key = va_arg(ap, char*);
   va_end(ap);
+  ASSERT(sr->conn);
+  ASSERT(sr->conn->read_type == 0 && sr->conn->write_type == 0);
   spe_redis_send(sr);
   return true;
 }

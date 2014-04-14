@@ -11,7 +11,7 @@ void*
 spe_pool_get(spe_pool_t* pool) {
   ASSERT(pool);
   if (pool->len <= 0) return NULL;
-  return pool->data[pool->len--];
+  return pool->data[--pool->len];
 }
 
 /*
@@ -22,6 +22,10 @@ spe_pool_put
 void
 spe_pool_put(spe_pool_t* pool, void* obj) {
   ASSERT(pool && obj);
+  if (pool->len >= pool->total) {
+    pool->handler(obj);
+    return;
+  }
   pool->data[pool->len++] = obj;
 }
 

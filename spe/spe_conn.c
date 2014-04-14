@@ -173,6 +173,10 @@ spe_conn_read_until
 */
 bool
 spe_conn_readuntil(spe_conn_t* conn, char* delim, spe_handler_t handler) {
+  if (!conn || conn->read_type != SPE_CONN_READNONE) {
+    SPE_LOG_ERR("error");
+  }
+
   ASSERT(conn && conn->read_type == SPE_CONN_READNONE);
   if (!delim || conn->closed || conn->error) return false;
   conn->read_callback_task.handler = handler;
