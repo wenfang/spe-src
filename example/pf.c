@@ -1,26 +1,37 @@
 #include "spe.h"
 #include <stdio.h>
 
+#define PF_INIT 0
+#define PF_END  1
+
+struct pf_conn_s {
+  spe_conn_t* conn;
+  int         status;
+};
+typedef struct pf_conn_s pf_conn_t;
 
 static spe_server_t* srv;
 
-static int count = 0;
-void
-on_close(void* arg1) {
-  spe_conn_t* conn = arg1;
-  spe_conn_destroy(conn);
-  if (count++ > 1000000) spe_main_stop = 1;
-}
-
-void
-on_end(void* arg) {
-  spe_conn_t* conn = arg;
+static void
+driver_machine(void* arg) {
+  pf_conn_t* pf_conn = arg;
+  spe_conn_t* conn = pf_conn->conn;
   if (conn->closed || conn->error) {
     spe_conn_destroy(conn);
+    free(pf_conn);
     return;
   }
-  spe_conn_writes(conn, "OK\r\n");
-  spe_conn_flush(conn, SPE_HANDLER1(on_close, conn));
+  switch (pf_conn->status) {
+    case PF_INIT:
+      pf_conn->status = PF_END;
+      spe_conn_writes(conn, "OK\r\n");
+      spe_conn_flush(conn);
+      break;
+    case PF_END:
+      spe_conn_destroy(conn);
+      free(pf_conn);
+      break;
+  }
 }
 
 static void
@@ -30,7 +41,16 @@ run(spe_server_t* srv, unsigned cfd) {
     spe_sock_close(cfd);
     return;
   }
-  spe_conn_readuntil(conn, "\r\n\r\n", SPE_HANDLER1(on_end, conn));
+  pf_conn_t* pf_conn = calloc(1, sizeof(pf_conn_t));
+  if (!pf_conn) {
+    spe_conn_destroy(conn);
+    return;
+  }
+  conn->read_callback_task.handler  = SPE_HANDLER1(driver_machine, pf_conn);
+  conn->write_callback_task.handler = SPE_HANDLER1(driver_machine, pf_conn);
+  pf_conn->conn   = conn;
+  pf_conn->status = PF_INIT;
+  spe_conn_readuntil(pf_conn->conn, "\r\n\r\n");
 }
 
 static spe_server_conf_t srv_conf = {

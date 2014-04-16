@@ -41,7 +41,9 @@ driver_machine(spe_redis_t* sr) {
       }
       sr->error = 0;
       sr->status = SPE_REDIS_CONN;
-      spe_conn_connect(sr->conn, sr->host, sr->port, SPE_HANDLER1(driver_machine, sr));
+      sr->conn->read_callback_task.handler = SPE_HANDLER1(driver_machine, sr);
+      sr->conn->write_callback_task.handler = SPE_HANDLER1(driver_machine, sr);
+      spe_conn_connect(sr->conn, sr->host, sr->port);
       break;
     case SPE_REDIS_CONN:
       // send request
@@ -52,10 +54,10 @@ driver_machine(spe_redis_t* sr) {
         spe_conn_writes(sr->conn, buf);
       }
       sr->status = SPE_REDIS_SEND;
-      spe_conn_flush(sr->conn, SPE_HANDLER1(driver_machine, sr));
+      spe_conn_flush(sr->conn);
     case SPE_REDIS_SEND:
       sr->status = SPE_REDIS_RECV_LINE;
-      spe_conn_readuntil(sr->conn, "\r\n", SPE_HANDLER1(driver_machine, sr));
+      spe_conn_readuntil(sr->conn, "\r\n");
       break;
     case SPE_REDIS_RECV_LINE:
       if (sr->conn->buffer->data[0] == '+' || sr->conn->buffer->data[0] == '-' ||
@@ -74,7 +76,7 @@ driver_machine(spe_redis_t* sr) {
           return;
         }
         sr->status = SPE_REDIS_RECV_DATA;
-        spe_conn_readbytes(sr->conn, resSize+2, SPE_HANDLER1(driver_machine, sr));
+        spe_conn_readbytes(sr->conn, resSize+2);
         return;
       }
       if (sr->conn->buffer->data[0] == '*') {

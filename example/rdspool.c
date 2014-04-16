@@ -21,7 +21,7 @@ drive_machine(void* arg) {
   if (rds->red && rds->red->error && rds->status != RDS_CLOSE) {
     rds->status = RDS_CLOSE;
     spe_conn_writes(rds->conn, "ERROR GET DATA\r\n");
-    spe_conn_flush(rds->conn, SPE_HANDLER1(drive_machine, rds));
+    spe_conn_flush(rds->conn);
     spe_redis_destroy(rds->red);
     rds->red = NULL;
     return;
@@ -39,7 +39,7 @@ drive_machine(void* arg) {
         if (!rds->red) {
           rds->status = RDS_CLOSE;
           spe_conn_writes(rds->conn, "ERROR CREATE REDIS CLIENT\r\n");
-          spe_conn_flush(rds->conn, SPE_HANDLER1(drive_machine, rds));
+          spe_conn_flush(rds->conn);
           return;
         }
       }
@@ -51,7 +51,7 @@ drive_machine(void* arg) {
         spe_conn_write(rds->conn, rds->red->recv_buffer->data[i]);
       }
       rds->status = RDS_CLOSE;
-      spe_conn_flush(rds->conn, SPE_HANDLER1(drive_machine, rds));
+      spe_conn_flush(rds->conn);
       break;
     case RDS_CLOSE:
       if (rds->red) spe_pool_put(pool, rds->red);
@@ -77,7 +77,9 @@ run(spe_server_t* srv, unsigned cfd) {
   }
   rds->conn = conn;
   rds->status = RDS_INIT;
-  spe_conn_readuntil(conn, "\r\n\r\n", SPE_HANDLER1(drive_machine, rds));
+  rds->conn->read_callback_task.handler   = SPE_HANDLER1(drive_machine, rds);
+  rds->conn->write_callback_task.handler  = SPE_HANDLER1(drive_machine, rds);
+  spe_conn_readuntil(rds->conn, "\r\n\r\n");
 }
 
 static spe_server_conf_t srv_conf = {

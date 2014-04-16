@@ -33,16 +33,16 @@ struct spe_conn_s {
 typedef struct spe_conn_s spe_conn_t;
 
 extern bool
-spe_conn_connect(spe_conn_t* conn, const char* addr, const char* port, spe_handler_t handler);
+spe_conn_connect(spe_conn_t* conn, const char* addr, const char* port);
 
 extern bool
-spe_conn_readuntil(spe_conn_t* conn, char* delim, spe_handler_t handler);
+spe_conn_readuntil(spe_conn_t* conn, char* delim);
 
 extern bool
-spe_conn_readbytes(spe_conn_t* conn, unsigned len, spe_handler_t handler);
+spe_conn_readbytes(spe_conn_t* conn, unsigned len);
 
 extern bool
-spe_conn_read(spe_conn_t* conn, spe_handler_t handler);
+spe_conn_read(spe_conn_t* conn);
 
 static inline bool
 spe_conn_writeb(spe_conn_t* conn, char* buf, unsigned len) {
@@ -66,7 +66,7 @@ spe_conn_writes(spe_conn_t* conn, char* buf) {
 }
 
 extern bool
-spe_conn_flush(spe_conn_t* conn, spe_handler_t handler);
+spe_conn_flush(spe_conn_t* conn);
 
 extern bool
 spe_conn_set_timeout(spe_conn_t* conn, unsigned read_expire_time, unsigned write_expire_time);
