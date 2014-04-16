@@ -18,7 +18,7 @@ driver_machine(spe_redis_t* sr) {
     spe_conn_destroy(sr->conn);
     sr->conn = NULL;
     sr->status = SPE_REDIS_INIT;
-    SPE_HANDLER_CALL(sr->handler);
+    spe_task_enqueue(&sr->callback_task);
     return;
   }
   int cfd;
@@ -29,14 +29,14 @@ driver_machine(spe_redis_t* sr) {
       if (cfd < 0) {
         SPE_LOG_ERR("spe_sock_tcp_socket error");
         sr->error = 1;
-        SPE_HANDLER_CALL(sr->handler);
+        spe_task_enqueue(&sr->callback_task);
         return;
       }
       if (!(sr->conn = spe_conn_create(cfd))) {
         SPE_LOG_ERR("spe_conn_create error");
         spe_sock_close(cfd);
         sr->error = 1;
-        SPE_HANDLER_CALL(sr->handler);
+        spe_task_enqueue(&sr->callback_task);
         return;
       }
       sr->error = 0;
@@ -64,7 +64,7 @@ driver_machine(spe_redis_t* sr) {
           sr->conn->buffer->data[0] == ':') {
         spe_slist_append(sr->recv_buffer, sr->conn->buffer);
         sr->status = SPE_REDIS_CONN;
-        SPE_HANDLER_CALL(sr->handler);
+        spe_task_enqueue(&sr->callback_task);
         return;
       }
       if (sr->conn->buffer->data[0] == '$') {
@@ -72,7 +72,7 @@ driver_machine(spe_redis_t* sr) {
         int resSize = atoi(sr->conn->buffer->data+1);
         if (resSize <= 0) {
           sr->status = SPE_REDIS_CONN;
-          SPE_HANDLER_CALL(sr->handler);
+          spe_task_enqueue(&sr->callback_task);
           return;
         }
         sr->status = SPE_REDIS_RECV_DATA;
@@ -87,7 +87,7 @@ driver_machine(spe_redis_t* sr) {
     case SPE_REDIS_RECV_DATA:
       spe_slist_appendb(sr->recv_buffer, sr->conn->buffer->data, sr->conn->buffer->len-2);
       sr->status = SPE_REDIS_CONN;
-      SPE_HANDLER_CALL(sr->handler);
+      spe_task_enqueue(&sr->callback_task);
       break;
   }
 }
@@ -101,7 +101,7 @@ void
 spe_redis_do(spe_redis_t* sr, spe_handler_t handler, int nargs, ...) {
   ASSERT(sr && nargs>0);
   // init redis for new command
-  sr->handler = handler;
+  sr->callback_task.handler = handler;
   spe_slist_clean(sr->send_buffer);
   spe_slist_clean(sr->recv_buffer);
   // generate send command
@@ -133,6 +133,7 @@ spe_redis_create(const char* host, const char* port) {
   }
   sr->host = host;
   sr->port = port;
+  spe_task_init(&sr->callback_task);
   // init buffer
   if (!(sr->send_buffer = spe_slist_create())) {
     SPE_LOG_ERR("spe_slist_create error");
@@ -160,6 +161,7 @@ spe_redis_destroy
 void
 spe_redis_destroy(spe_redis_t* sr) {
   ASSERT(sr);
+  spe_task_dequeue(&sr->callback_task);
   spe_slist_destroy(sr->send_buffer);
   spe_slist_destroy(sr->recv_buffer);
   if (sr->conn) spe_conn_destroy(sr->conn);

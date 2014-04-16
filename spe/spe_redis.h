@@ -2,14 +2,14 @@
 #define __SPE_REDIS_H
 
 #include "spe_conn.h"
-#include "spe_handler.h"
+#include "spe_task.h"
 #include "spe_string.h"
 
 struct spe_redis_s {
   spe_conn_t*   conn;
   const char*   host;
   const char*   port;
-  spe_handler_t handler;
+  spe_task_t    callback_task;
   spe_slist_t*  send_buffer;
   spe_slist_t*  recv_buffer;
   unsigned      status:7;
