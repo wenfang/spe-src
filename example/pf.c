@@ -94,7 +94,8 @@ pf_after_loop(void) {
   spe_server_after_loop(srv);
 }
 
-static spe_module_t pf_module = {
+spe_module_t MainMod = {
+  false,
   pf_init,
   NULL,
   pf_start,
@@ -102,9 +103,3 @@ static spe_module_t pf_module = {
   pf_before_loop,
   pf_after_loop,
 };
-
-__attribute__((constructor))
-static void
-__pf_init(void) {
-  spe_register_module(&pf_module);
-}

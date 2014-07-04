@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 struct spe_module_s {
+  bool  stop;
   bool  (*init)(void);
   bool  (*exit)(void);
   bool  (*start)(void);
@@ -13,9 +14,6 @@ struct spe_module_s {
 };
 typedef struct spe_module_s spe_module_t;
 
-extern void
-spe_register_module(spe_module_t*);
-
-extern bool spe_main_stop;
+extern spe_module_t MainMod;
 
 #endif
