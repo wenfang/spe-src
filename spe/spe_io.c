@@ -100,16 +100,33 @@ spe_io_create(const char* fname) {
     free(io);
     return NULL;
   }
-  if ( !(io->data = spe_string_create(0))) {
+  io->data          = spe_string_create(0);
+  io->_read_buffer  = spe_string_create(0);
+  io->_write_buffer = spe_string_create(0);
+  if (!io->data || !io->_read_buffer || !io->_write_buffer) {
     spe_io_destroy(io);
     return NULL;
   }
-  if ( !(io->_read_buffer = spe_string_create(0))) {
-    spe_io_destroy(io);
-    return NULL;
-  }
-  if ( !(io->_write_buffer = spe_string_create(0))) {
-    spe_io_destroy(io);
+  return io;
+}
+
+/*
+===================================================================================================
+spe_io_create_fd
+===================================================================================================
+*/
+spe_io_t*
+spe_io_create_fd(int fd) {
+  spe_io_t* io = calloc(1, sizeof(spe_io_t));
+  if (!io) return NULL;
+  io->_fd           = fd;
+  io->data          = spe_string_create(0);
+  io->_read_buffer  = spe_string_create(0);
+  io->_write_buffer = spe_string_create(0);
+  if (!io->data || !io->_read_buffer || !io->_write_buffer) {
+    spe_string_destroy(io->data);
+    spe_string_destroy(io->_read_buffer);
+    spe_string_destroy(io->_write_buffer);
     return NULL;
   }
   return io;
@@ -123,9 +140,9 @@ spe_io_destroy
 void 
 spe_io_destroy(spe_io_t* io) {
   ASSERT(io);
-  close(io->_fd);
   if (io->data) spe_string_destroy(io->data);
   if (io->_read_buffer) spe_string_destroy(io->_read_buffer);
   if (io->_write_buffer) spe_string_destroy(io->_write_buffer);
+  close(io->_fd);
   free(io);
 }

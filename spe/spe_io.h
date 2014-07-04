@@ -31,6 +31,9 @@ spe_io_flush(spe_io_t* io);
 extern spe_io_t*
 spe_io_create(const char* fname);
 
+extern spe_io_t*
+spe_io_create_fd(int fd);
+
 extern void
 spe_io_destroy(spe_io_t* io);
 
