@@ -1,19 +1,22 @@
 #ifndef __SPE_MAIN_H
 #define __SPE_MAIN_H
 
+#include "spe_task.h"
 #include <stdbool.h>
 
-struct spe_module_s {
-  bool  stop;
-  bool  (*init)(void);
-  bool  (*exit)(void);
-  bool  (*start)(void);
-  bool  (*end)(void);
-  void  (*before_loop)(void);
-  void  (*after_loop)(void);
-};
-typedef struct spe_module_s spe_module_t;
+extern bool modStop;
+extern spe_task_t modTask;
 
-extern spe_module_t MainMod;
+extern bool
+mod_init(void);
+
+extern bool
+mod_exit(void);
+
+extern void
+mod_before_loop(void);
+
+extern void
+mod_after_loop(void);
 
 #endif

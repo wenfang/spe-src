@@ -8,8 +8,6 @@
 #include <string.h>
 #include <errno.h>
 
-spe_server_t* MainSrv;
-
 static void
 server_accept(void* arg) {
   spe_server_t* srv = arg;
@@ -66,7 +64,10 @@ spe_server_create
 */
 spe_server_t*
 spe_server_create(unsigned sfd, spe_server_conf_t* conf) {
-  if (!conf) return NULL;
+  if (!conf) {
+    SPE_LOG_ERR("server conf is null");
+    return NULL;
+  }
   spe_server_t* srv = calloc(1, sizeof(spe_server_t));
   if (!srv) {
     SPE_LOG_ERR("server create error");

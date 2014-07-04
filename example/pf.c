@@ -61,9 +61,8 @@ static spe_server_conf_t srv_conf = {
   4,
 };
 
-
-static bool
-pf_init(void) {
+bool
+mod_init(void) {
   int port = spe_opt_int("pf_base", "port", 7879);
   int sfd = spe_sock_tcp_server("127.0.0.1", port);
   if (sfd < 0) {
@@ -75,31 +74,21 @@ pf_init(void) {
     printf("server create error\n");
     return false;
   }
+  modTask.handler = SPE_HANDLER1(spe_server_start, srv);
   return true;
 }
 
-static bool
-pf_start(void) {
-  spe_server_start(srv);
+bool
+mod_exit(void) {
   return true;
 }
 
-static void
-pf_before_loop(void) {
+void
+mod_before_loop(void) {
   spe_server_before_loop(srv);
 }
 
-static void
-pf_after_loop(void) {
+void
+mod_after_loop(void) {
   spe_server_after_loop(srv);
 }
-
-spe_module_t MainMod = {
-  false,
-  pf_init,
-  NULL,
-  pf_start,
-  NULL, 
-  pf_before_loop,
-  pf_after_loop,
-};

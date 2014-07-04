@@ -10,6 +10,9 @@
 #include <signal.h>
 #include <unistd.h>
 
+spe_task_t modTask;
+bool modStop;
+
 int main(int argc, char* argv[]) {
   if (argc != 2) {
     printf("Usage: %s <conf_file>\n", argv[0]);
@@ -29,30 +32,26 @@ int main(int argc, char* argv[]) {
   spe_signal_init();
   spe_signal_register(SIGPIPE, SIG_IGN);
   spe_signal_register(SIGHUP, SIG_IGN);
-  // init
-  if (MainMod.init && !MainMod.init()) {
-    fprintf(stderr, "[ERROR] Module Init Error ...\n");
+  // init modTask
+  spe_task_init(&modTask);
+  // call mod_init
+  if (!mod_init()) {
+    fprintf(stderr, "[ERROR] mod_init...\n");
     return 1;
   }
-  if (MainMod.start && !MainMod.start()) {
-    fprintf(stderr, "[ERROR] Module Start Error ...\n");
-    return 1;
-  }
-  while (!MainMod.stop) {
+  spe_task_enqueue(&modTask);
+  // enter loop
+  while (!modStop) {
     unsigned timeout = 300;
     if (g_task_num) timeout = 0;
-    if (MainMod.before_loop) MainMod.before_loop();
+    mod_before_loop();
     spe_epoll_process(timeout);
-    if (MainMod.after_loop) MainMod.after_loop();
+    mod_after_loop();
     spe_task_process();
     spe_timer_process();
     spe_signal_process();
   }
-  if (MainMod.end && !MainMod.end()) {
-    fprintf(stderr, "[ERROR] Module End Error ...\n");
-    return 1;
-  }
-  if (MainMod.exit && !MainMod.exit()) {
+  if (!mod_exit()) {
     fprintf(stderr, "[ERROR] Module Exit Error ...\n");
     return 1;
   }
