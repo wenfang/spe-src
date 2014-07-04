@@ -22,7 +22,6 @@
 #include "spe_conn.h"
 #include "spe_object.h"
 #include "spe_worker.h"
-#include "spe_routine.h"
 #include "spe_redis.h"
 #include "spe_shm.h"
 #include "spe_pool.h"
