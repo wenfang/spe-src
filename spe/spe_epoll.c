@@ -125,13 +125,11 @@ spe_epoll_wakeup(void) {
 
 /*
 ===================================================================================================
-spe_epoll_fork
+spe_epoll_init
 ===================================================================================================
 */
-void
-spe_epoll_fork(void) {
-  close(epoll_eventfd);
-  close(epfd);
+static void
+spe_epoll_init(void) {
   epfd = epoll_create(1024);
   // create eventfd
   epoll_eventfd = eventfd(0, 0);
@@ -144,17 +142,20 @@ spe_epoll_fork(void) {
   epoll_ctl(epfd, EPOLL_CTL_ADD, epoll_eventfd, &ee);
 }
 
+/*
+===================================================================================================
+spe_epoll_fork
+===================================================================================================
+*/
+void
+spe_epoll_fork(void) {
+  close(epoll_eventfd);
+  close(epfd);
+  spe_epoll_init();
+}
+
 __attribute__((constructor))
 static void
 epoll_init(void) {
-  epfd = epoll_create(1024);
-  // create eventfd
-  epoll_eventfd = eventfd(0, 0);
-  spe_sock_set_block(epoll_eventfd, 0);
-  // set eventfd
-  struct epoll_event ee;
-  ee.data.u64 = 0;
-  ee.data.fd  = epoll_eventfd;
-  ee.events   = EPOLLIN;
-  epoll_ctl(epfd, EPOLL_CTL_ADD, epoll_eventfd, &ee);
+  spe_epoll_init();
 }

@@ -4,44 +4,34 @@
 #include "spe_shm.h"
 #include "spe_task.h"
 
-struct spe_server_s;
-typedef void (*spe_server_Init)(struct spe_server_s*, void*);
-typedef void (*spe_server_Handler)(struct spe_server_s*, unsigned);
 
-struct spe_server_conf_s {
-  spe_server_Init     init;
-  void*               arg;
-  spe_server_Handler  handler;
-  unsigned            daemon:1;
-  unsigned            nprocs:7;
-};
-typedef struct spe_server_conf_s spe_server_conf_t;
+typedef void (*spe_server_Handler)(unsigned);
 
 struct spe_server_s {
   unsigned            sfd;
   spe_server_Handler  handler;
   spe_task_t          listen_task;
-  void*               data;
   pthread_mutex_t*    accept_mutex;
   unsigned            use_accept_mutex;
   unsigned            accept_mutex_hold;
 };
 typedef struct spe_server_s spe_server_t;
 
-extern spe_server_t*
-spe_server_create(unsigned sfd, spe_server_conf_t* conf);
+extern spe_server_t* g_server;
 
 extern void
-spe_server_destroy(spe_server_t* srv);
+spe_server_start();
 
 extern void
-spe_server_start(spe_server_t* srv);
+spe_server_before_loop();
 
 extern void
-spe_server_before_loop(spe_server_t* srv);
+spe_server_after_loop();
+
+extern bool
+spe_server_init(const char* addr, int port, spe_server_Handler handler);
 
 extern void
-spe_server_after_loop(spe_server_t* srv);
-
+spe_server_deinit();
 
 #endif

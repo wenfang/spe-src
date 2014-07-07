@@ -41,7 +41,7 @@ int
 spe_spawn(unsigned procs) {
   for (int i=1; i<procs; i++) {
     pid_t pid = fork();
-    if (!pid) return 0;
+    if (!pid) return 0; // child return here
     if (pid < 0) return -1;
   }
   return 1;

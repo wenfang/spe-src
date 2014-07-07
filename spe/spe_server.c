@@ -8,101 +8,93 @@
 #include <string.h>
 #include <errno.h>
 
+spe_server_t* g_server;
+
 static void
-server_accept(void* arg) {
-  spe_server_t* srv = arg;
-  int cfd = spe_sock_accept(srv->sfd);
+server_accept() {
+  int cfd = spe_sock_accept(g_server->sfd);
   if (cfd <= 0) return;
-  if (!srv->handler) {
+  if (!g_server->handler) {
     spe_sock_close(cfd);
     return;
   }
-  srv->handler(srv, cfd);
-}
-/*
-===================================================================================================
-spe_server_disable
-===================================================================================================
-*/
-void
-spe_server_after_loop(spe_server_t* srv) {
-  ASSERT(srv);
-  if (!srv->use_accept_mutex) return;
-  if (srv->accept_mutex_hold) pthread_mutex_unlock(srv->accept_mutex);
+  g_server->handler(cfd);
 }
 
 /*
 ===================================================================================================
-spe_server_enable
+spe_server_start
 ===================================================================================================
 */
 void
-spe_server_before_loop(spe_server_t* srv) {
-  ASSERT(srv);
-  if (!srv->use_accept_mutex) return;
-  if (!pthread_mutex_trylock(srv->accept_mutex)) {
-    if (srv->accept_mutex_hold) return;
-    srv->accept_mutex_hold = 1;
-    spe_epoll_enable(srv->sfd, SPE_EPOLL_LISTEN, &srv->listen_task);
-    return;
+spe_server_start() {
+  if (!g_server || g_server->use_accept_mutex) return;
+  spe_epoll_enable(g_server->sfd, SPE_EPOLL_LISTEN, &g_server->listen_task);
+}
+
+/*
+===================================================================================================
+spe_server_before_loop
+===================================================================================================
+*/
+void
+spe_server_before_loop() {
+  if (!g_server || !g_server->use_accept_mutex) return;
+  if (!pthread_mutex_trylock(g_server->accept_mutex)) {
+    if (g_server->accept_mutex_hold) return;
+    g_server->accept_mutex_hold = 1;
+    spe_epoll_enable(g_server->sfd, SPE_EPOLL_LISTEN, &g_server->listen_task);
   } else {
-    if (srv->accept_mutex_hold) spe_epoll_disable(srv->sfd, SPE_EPOLL_LISTEN);
-    srv->accept_mutex_hold = 0;
+    if (g_server->accept_mutex_hold) spe_epoll_disable(g_server->sfd, SPE_EPOLL_LISTEN);
+    g_server->accept_mutex_hold = 0;
   }
-}
-
-void
-spe_server_start(spe_server_t* srv) {
-  if (srv->use_accept_mutex) return;
-  spe_epoll_enable(srv->sfd, SPE_EPOLL_LISTEN, &srv->listen_task);
 }
 
 /*
 ===================================================================================================
-spe_server_create
+spe_server_after_loop
 ===================================================================================================
 */
-spe_server_t*
-spe_server_create(unsigned sfd, spe_server_conf_t* conf) {
-  if (!conf) {
-    SPE_LOG_ERR("server conf is null");
-    return NULL;
+void
+spe_server_after_loop() {
+  if (!g_server || !g_server->use_accept_mutex) return;
+  if (g_server->accept_mutex_hold) pthread_mutex_unlock(g_server->accept_mutex);
+}
+
+/*
+===================================================================================================
+spe_server_init
+===================================================================================================
+*/
+bool
+spe_server_init(const char* addr, int port, spe_server_Handler handler) {
+  int sfd = spe_sock_tcp_server(addr, port);
+  if (sfd < 0) {
+    SPE_LOG_ERR("spe_sock_tcp_server error");
+    return false;
   }
-  spe_server_t* srv = calloc(1, sizeof(spe_server_t));
-  if (!srv) {
-    SPE_LOG_ERR("server create error");
-    return NULL;
+  g_server = calloc(1, sizeof(spe_server_t));
+  if (!g_server) {
+    SPE_LOG_ERR("server struct alloc error");
+    spe_sock_close(sfd);
+    return false;
   }
   spe_sock_set_block(sfd, 0);
-  srv->sfd      = sfd;
-  srv->handler  = conf->handler;
-  spe_task_init(&srv->listen_task);
-  srv->listen_task.handler = SPE_HANDLER1(server_accept, srv);
-  if (conf->init) conf->init(srv, conf->arg);
-
-  if (conf->nprocs) {
-    srv->use_accept_mutex = 1;
-    srv->accept_mutex = spe_shmux_create();
-    if (!srv->accept_mutex) {
-      SPE_LOG_ERR("spe_shmux_create error");
-      free(srv);
-      return NULL;
-    }
-    spe_spawn(conf->nprocs);
-    spe_epoll_fork();
-  }
-  return srv;
+  g_server->sfd      = sfd;
+  g_server->handler  = handler;
+  spe_task_init(&g_server->listen_task);
+  g_server->listen_task.handler = SPE_HANDLER0(server_accept);
+  return true;
 }
 
 /*
 ===================================================================================================
-spe_server_destroy
+spe_server_deinit
 ===================================================================================================
 */
 void
-spe_server_destroy(spe_server_t* srv) {
-  ASSERT(srv);
-  if (srv->use_accept_mutex) spe_shmux_destroy(srv->accept_mutex);
-  spe_sock_close(srv->sfd);
-  free(srv);
+spe_server_deinit() {
+  if (!g_server) return;
+  if (g_server->use_accept_mutex) spe_shmux_destroy(g_server->accept_mutex);
+  spe_sock_close(g_server->sfd);
 }
