@@ -1,5 +1,4 @@
 #include "spe_server.h"
-#include "spe_epoll.h"
 #include "spe_sock.h"
 #include "spe_util.h"
 #include "spe_log.h"
@@ -19,46 +18,6 @@ server_accept() {
     return;
   }
   g_server->_handler(cfd);
-}
-
-/*
-===================================================================================================
-spe_server_start
-===================================================================================================
-*/
-void
-spe_server_start() {
-  if (!g_server || g_server->accept_mutex) return;
-  spe_epoll_enable(g_server->_sfd, SPE_EPOLL_LISTEN, &g_server->_listen_task);
-}
-
-/*
-===================================================================================================
-spe_server_before_loop
-===================================================================================================
-*/
-void
-spe_server_before_loop() {
-  if (!g_server || !g_server->accept_mutex) return;
-  if (!pthread_mutex_trylock(g_server->accept_mutex)) {
-    if (g_server->accept_mutex_hold) return;
-    g_server->accept_mutex_hold = 1;
-    spe_epoll_enable(g_server->_sfd, SPE_EPOLL_LISTEN, &g_server->_listen_task);
-  } else {
-    if (g_server->accept_mutex_hold) spe_epoll_disable(g_server->_sfd, SPE_EPOLL_LISTEN);
-    g_server->accept_mutex_hold = 0;
-  }
-}
-
-/*
-===================================================================================================
-spe_server_after_loop
-===================================================================================================
-*/
-void
-spe_server_after_loop() {
-  if (!g_server || !g_server->accept_mutex) return;
-  if (g_server->accept_mutex_hold) pthread_mutex_unlock(g_server->accept_mutex);
 }
 
 /*

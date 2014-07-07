@@ -3,7 +3,7 @@
 
 #include "spe_shm.h"
 #include "spe_task.h"
-
+#include "spe_epoll.h"
 
 typedef void (*spe_server_Handler)(unsigned);
 
@@ -18,14 +18,30 @@ typedef struct spe_server_s spe_server_t;
 
 extern spe_server_t* g_server;
 
-extern void
-spe_server_start();
+static inline void
+spe_server_start() {
+  if (!g_server || g_server->accept_mutex) return;
+  spe_epoll_enable(g_server->_sfd, SPE_EPOLL_LISTEN, &g_server->_listen_task);
+}
 
-extern void
-spe_server_before_loop();
+static inline void
+spe_server_before_loop() {
+  if (!g_server || !g_server->accept_mutex) return;
+  if (!pthread_mutex_trylock(g_server->accept_mutex)) {
+    if (g_server->accept_mutex_hold) return;
+    g_server->accept_mutex_hold = 1;
+    spe_epoll_enable(g_server->_sfd, SPE_EPOLL_LISTEN, &g_server->_listen_task);
+  } else {
+    if (g_server->accept_mutex_hold) spe_epoll_disable(g_server->_sfd, SPE_EPOLL_LISTEN);
+    g_server->accept_mutex_hold = 0;
+  }
+}
 
-extern void
-spe_server_after_loop();
+static inline void
+spe_server_after_loop() {
+  if (!g_server || !g_server->accept_mutex) return;
+  if (g_server->accept_mutex_hold) pthread_mutex_unlock(g_server->accept_mutex);
+}
 
 extern bool
 spe_server_init(const char* addr, int port, spe_server_Handler handler);
