@@ -14,10 +14,10 @@
 static void 
 driver_machine(spe_redis_t* sr) {
   if (sr->status != SPE_REDIS_INIT && (sr->conn->error || sr->conn->closed)) {
-    sr->error = 1;
     spe_conn_destroy(sr->conn);
     sr->conn = NULL;
     sr->status = SPE_REDIS_INIT;
+    sr->error = 1;
     SPE_HANDLER_CALL(sr->handler);
     return;
   }
