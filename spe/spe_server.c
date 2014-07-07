@@ -12,13 +12,13 @@ spe_server_t* g_server;
 
 static void
 server_accept() {
-  int cfd = spe_sock_accept(g_server->sfd);
+  int cfd = spe_sock_accept(g_server->_sfd);
   if (cfd <= 0) return;
-  if (!g_server->handler) {
+  if (!g_server->_handler) {
     spe_sock_close(cfd);
     return;
   }
-  g_server->handler(cfd);
+  g_server->_handler(cfd);
 }
 
 /*
@@ -28,8 +28,8 @@ spe_server_start
 */
 void
 spe_server_start() {
-  if (!g_server || g_server->use_accept_mutex) return;
-  spe_epoll_enable(g_server->sfd, SPE_EPOLL_LISTEN, &g_server->listen_task);
+  if (!g_server || g_server->accept_mutex) return;
+  spe_epoll_enable(g_server->_sfd, SPE_EPOLL_LISTEN, &g_server->_listen_task);
 }
 
 /*
@@ -39,13 +39,13 @@ spe_server_before_loop
 */
 void
 spe_server_before_loop() {
-  if (!g_server || !g_server->use_accept_mutex) return;
+  if (!g_server || !g_server->accept_mutex) return;
   if (!pthread_mutex_trylock(g_server->accept_mutex)) {
     if (g_server->accept_mutex_hold) return;
     g_server->accept_mutex_hold = 1;
-    spe_epoll_enable(g_server->sfd, SPE_EPOLL_LISTEN, &g_server->listen_task);
+    spe_epoll_enable(g_server->_sfd, SPE_EPOLL_LISTEN, &g_server->_listen_task);
   } else {
-    if (g_server->accept_mutex_hold) spe_epoll_disable(g_server->sfd, SPE_EPOLL_LISTEN);
+    if (g_server->accept_mutex_hold) spe_epoll_disable(g_server->_sfd, SPE_EPOLL_LISTEN);
     g_server->accept_mutex_hold = 0;
   }
 }
@@ -57,7 +57,7 @@ spe_server_after_loop
 */
 void
 spe_server_after_loop() {
-  if (!g_server || !g_server->use_accept_mutex) return;
+  if (!g_server || !g_server->accept_mutex) return;
   if (g_server->accept_mutex_hold) pthread_mutex_unlock(g_server->accept_mutex);
 }
 
@@ -80,10 +80,10 @@ spe_server_init(const char* addr, int port, spe_server_Handler handler) {
     return false;
   }
   spe_sock_set_block(sfd, 0);
-  g_server->sfd      = sfd;
-  g_server->handler  = handler;
-  spe_task_init(&g_server->listen_task);
-  g_server->listen_task.handler = SPE_HANDLER0(server_accept);
+  g_server->_sfd      = sfd;
+  g_server->_handler  = handler;
+  spe_task_init(&g_server->_listen_task);
+  g_server->_listen_task.handler = SPE_HANDLER0(server_accept);
   return true;
 }
 
@@ -95,6 +95,10 @@ spe_server_deinit
 void
 spe_server_deinit() {
   if (!g_server) return;
-  if (g_server->use_accept_mutex) spe_shmux_destroy(g_server->accept_mutex);
-  spe_sock_close(g_server->sfd);
+  if (g_server->accept_mutex) {
+    spe_shmux_destroy(g_server->accept_mutex);
+    g_server->accept_mutex = NULL;
+  }
+  spe_sock_close(g_server->_sfd);
+  g_server = NULL; 
 }

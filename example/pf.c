@@ -54,7 +54,9 @@ run(unsigned cfd) {
 bool
 mod_init(void) {
   int port = spe_opt_int("pf_base", "port", 7879);
+  int procs = spe_opt_int("pf_base", "procs", 4);
   spe_server_init("127.0.0.1", port, run);
+  spe_main_procs(procs);
   return true;
 }
 

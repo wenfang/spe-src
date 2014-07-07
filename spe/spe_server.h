@@ -8,11 +8,10 @@
 typedef void (*spe_server_Handler)(unsigned);
 
 struct spe_server_s {
-  unsigned            sfd;
-  spe_server_Handler  handler;
-  spe_task_t          listen_task;
+  unsigned            _sfd;
+  spe_server_Handler  _handler;
+  spe_task_t          _listen_task;
   pthread_mutex_t*    accept_mutex;
-  unsigned            use_accept_mutex;
   unsigned            accept_mutex_hold;
 };
 typedef struct spe_server_s spe_server_t;

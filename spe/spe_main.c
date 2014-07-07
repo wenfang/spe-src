@@ -14,9 +14,9 @@ bool g_stop;
 
 bool
 spe_main_procs(int procs) {
-  if (procs <= 1) return true;
+  if (procs <= 1) return false;
+  if (g_server && g_server->accept_mutex) return false;
   if (g_server) {
-    g_server->use_accept_mutex = 1;
     g_server->accept_mutex = spe_shmux_create();
     if (!g_server->accept_mutex) {
       SPE_LOG_ERR("spe_shmux_create error");

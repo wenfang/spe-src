@@ -9,21 +9,21 @@
 #include <string.h>
 
 struct spe_conn_s {
-  int             fd;
-  spe_task_t      read_task;
-  spe_task_t      write_task;
-  unsigned        read_expire_time;
-  unsigned        write_expire_time;
+  int             _fd;
+  spe_task_t      _read_task;
+  spe_task_t      _write_task;
+  unsigned        _read_expire_time;
+  unsigned        _write_expire_time;
   spe_task_t      read_callback_task;
   spe_task_t      write_callback_task;
-  spe_string_t*   read_buffer;
-  spe_string_t*   write_buffer;
+  spe_string_t*   _read_buffer;
+  spe_string_t*   _write_buffer;
   spe_string_t*   buffer;
-  char*           delim;
-  unsigned        rbytes;
-  unsigned        init;
-  unsigned        read_type:2;
-  unsigned        write_type:1;
+  char*           _delim;
+  unsigned        _rbytes;
+  unsigned        _init;
+  unsigned        _read_type:2;
+  unsigned        _write_type:1;
   unsigned        connect_timeout:1;
   unsigned        read_timeout:1;
   unsigned        write_timeout:1;
@@ -48,21 +48,21 @@ static inline bool
 spe_conn_writeb(spe_conn_t* conn, char* buf, unsigned len) {
   ASSERT(conn && buf);
   if (conn->closed || conn->error) return false;
-  return spe_string_catb(conn->write_buffer, buf, len);
+  return spe_string_catb(conn->_write_buffer, buf, len);
 }
 
 static inline bool
 spe_conn_write(spe_conn_t* conn, spe_string_t* buf) {
   ASSERT(conn && buf);
   if (conn->closed || conn->error) return false;
-  return spe_string_catb(conn->write_buffer, buf->data, buf->len);
+  return spe_string_catb(conn->_write_buffer, buf->data, buf->len);
 }
 
 static inline bool
 spe_conn_writes(spe_conn_t* conn, char* buf) {
   ASSERT(conn && buf);
   if (conn->closed || conn->error) return false;
-  return spe_string_catb(conn->write_buffer, buf, strlen(buf));
+  return spe_string_catb(conn->_write_buffer, buf, strlen(buf));
 }
 
 extern bool
