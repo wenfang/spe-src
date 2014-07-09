@@ -143,8 +143,7 @@ spe_opt_destroy
 */
 void
 spe_opt_destroy() {
-  spe_opt_t* entry;
-  spe_opt_t* tmp;
+  spe_opt_t *entry, *tmp;
   list_for_each_entry_safe(entry, tmp, &options, node) {
     list_del_init(&entry->node);
     free(entry);

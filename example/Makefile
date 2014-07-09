@@ -9,7 +9,10 @@ OBJS=pf.o
 all:pf iot rdspool rds_client
 
 pf:pf.o
-	gcc -DDEBUG -pg -g -fPIC -std=gnu99 -lpthread -Wall pf.o $(BUILD)/libspe.a -o pf
+	gcc -DDEBUG -pg -g -fPIC -std=gnu99 -lpthread -lm -Wall pf.o $(BUILD)/libspe.a -o pf
+
+json:json.o
+	gcc -DDEBUG -pg -g -fPIC -std=gnu99 -lpthread -lm -Wall json.o $(BUILD)/libspe.a -o json
 
 iot:iot.o
 	gcc -DDEBUG -pg -g -fPIC -std=gnu99 -lpthread -Wall iot.o $(BUILD)/libspe.a -o iot
@@ -24,6 +27,7 @@ clean:
 	rm -rf $(OBJS)
 	rm -rf gmon.out
 	rm -rf pf
+	rm -rf json
 	rm -rf iot
 	rm -rf rdspool
 	rm -rf rds_client
