@@ -1,7 +1,6 @@
 #include "spe.h"
 #include <stdbool.h>
 
-static spe_server_t* srv;
 static spe_pool_t* pool;
 
 #define RDS_INIT  0
@@ -62,7 +61,7 @@ drive_machine(void* arg) {
 }
 
 static void
-run(spe_server_t* srv, unsigned cfd) {
+run(unsigned cfd) {
   spe_conn_t* conn = spe_conn_create(cfd);
   if (!conn) {
     SPE_LOG_ERR("spe_conn_create error");
@@ -82,50 +81,19 @@ run(spe_server_t* srv, unsigned cfd) {
   spe_conn_readuntil(rds->conn, "\r\n\r\n");
 }
 
-static spe_server_conf_t srv_conf = {
-  NULL,
-  NULL,
-  run,
-  0,
-  0,
-};
-
-static bool
-rdspool_init(void) {
+bool
+mod_init(void) {
   int port = spe_opt_int("rdspool", "port", 7879);
   pool = spe_pool_create(128, (spe_pool_Free)spe_redis_destroy);
   if (!pool) {
     fprintf(stderr, "redis pool create error\n");
     return false;
   }
-
-  int sfd = spe_sock_tcp_server("127.0.0.1", port);
-  if (sfd < 0) {
-    fprintf(stderr, "server socket create error\n");
-    return false;
-  }
-  srv = spe_server_create(sfd, &srv_conf);
-  if (!srv) {
-    fprintf(stderr, "server create error\n");
-    return false;
-  }
+  spe_server_init("127.0.0.1", port, run);
   return true;
 }
 
-static bool
-rdspool_start(void) {
-  spe_server_start(srv);
+bool
+mod_exit(void) {
   return true;
-}
-
-static spe_module_t rdspool_module = {
-  rdspool_init,
-  NULL,
-  rdspool_start,
-};
-
-__attribute__((constructor))
-static void
-__rdspool_init(void) {
-  spe_register_module(&rdspool_module);
 }
