@@ -3,8 +3,8 @@
 
 #include <syslog.h>
 #include <pthread.h>
-#include <sys/types.h>
 #include <unistd.h>
+#include <sys/types.h>
 
 #define SPE_LOG_EMERG(fmt, arg...)     spe_log_write(LOG_EMERG|LOG_LOCAL6, "[%s:%d][%d][%x]: "#fmt, __FILE__, __LINE__, getpid(), pthread_self(), ##arg)
 #define SPE_LOG_ALERT(fmt, arg...)     spe_log_write(LOG_ALERT|LOG_LOCAL6, "[%s:%d][%d][%x]: "#fmt, __FILE__, __LINE__, getpid(), pthread_self(), ##arg)

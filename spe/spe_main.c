@@ -66,7 +66,7 @@ main(int argc, char* argv[]) {
     spe_signal_process();
   }
   if (!mod_exit()) {
-    fprintf(stderr, "[ERROR] Module Exit Error ...\n");
+    fprintf(stderr, "[ERROR] mod_exit...\n");
     return 1;
   }
   spe_opt_destroy();
