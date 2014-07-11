@@ -1,11 +1,9 @@
 #ifndef __SPE_SERVER_H
 #define __SPE_SERVER_H
 
-#include "spe_shm.h"
-#include "spe_task.h"
-#include "spe_epoll.h"
+#include <stdbool.h>
 
-typedef void (*spe_server_Handler)(unsigned);
+typedef void (*speServerHandler)(unsigned);
 
 extern bool
 speServerUseAcceptMutex();
@@ -19,9 +17,8 @@ speServerBeforeLoop();
 extern void
 speServerAfterLoop();
 
-// user call spe_server_init and spe_server_deinit
 extern bool
-SpeServerInit(const char* addr, int port, spe_server_Handler handler);
+SpeServerInit(const char* addr, int port, speServerHandler handler);
 
 extern void
 SpeServerDeinit();

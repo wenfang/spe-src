@@ -40,5 +40,4 @@ spe_task_process();
 extern void
 spe_timer_process();
 
-
 #endif

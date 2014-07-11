@@ -1,4 +1,7 @@
 #include "spe_server.h"
+#include "spe_task.h"
+#include "spe_shm.h"
+#include "spe_epoll.h"
 #include "spe_sock.h"
 #include "spe_util.h"
 #include "spe_log.h"
@@ -8,11 +11,11 @@
 #include <errno.h>
 
 struct spe_server_s {
-  unsigned            _sfd;
-  spe_server_Handler  _handler;
-  spe_task_t          _listen_task;
-  pthread_mutex_t*    _accept_mutex;
-  unsigned            _accept_mutex_hold;
+  unsigned          _sfd;
+  speServerHandler  _handler;
+  spe_task_t        _listen_task;
+  pthread_mutex_t*  _accept_mutex;
+  unsigned          _accept_mutex_hold;
 };
 typedef struct spe_server_s spe_server_t;
 
@@ -96,7 +99,7 @@ SpeServerInit
 ===================================================================================================
 */
 bool
-SpeServerInit(const char* addr, int port, spe_server_Handler handler) {
+SpeServerInit(const char* addr, int port, speServerHandler handler) {
   if (g_server) return false;
   // create server fd
   int sfd = spe_sock_tcp_server(addr, port);
