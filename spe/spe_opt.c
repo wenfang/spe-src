@@ -11,24 +11,24 @@
 #define KEY_MAXLEN  16
 #define VAL_MAXLEN  128
 
-struct spe_opt_s {
+struct speOpt_s {
 	char                sec[SEC_MAXLEN];
  	char                key[KEY_MAXLEN];
 	char                val[VAL_MAXLEN];      // string value
 	struct list_head    node;
 };
-typedef struct spe_opt_s spe_opt_t;
+typedef struct speOpt_s speOpt_t;
 
 static LIST_HEAD(options);
 
 /*
 ===================================================================================================
-spe_opt_set
+speOptSet
 ===================================================================================================
 */
 static bool 
-spe_opt_set(char* sec, char* key, char* val) {
-  spe_opt_t* opt = calloc (1, sizeof(spe_opt_t));
+speOptSet(char* sec, char* key, char* val) {
+  speOpt_t* opt = calloc (1, sizeof(speOpt_t));
   if (!opt) return false;
   // set section and key 
   strncpy(opt->sec, sec, SEC_MAXLEN);
@@ -42,38 +42,38 @@ spe_opt_set(char* sec, char* key, char* val) {
 
 /*
 ===================================================================================================
-spe_opt_int
+SpeOptInt
 ===================================================================================================
 */
 int
-spe_opt_int(char* sec, char* key, int defval) {
-  if (!key) return defval;
-  if (!sec) sec = "global";
-  spe_opt_t* entry = NULL;
+SpeOptInt(char* section, char* key, int defaultValue) {
+  if (!key) return defaultValue;
+  if (!section) section = "global";
+  speOpt_t* entry = NULL;
   list_for_each_entry(entry, &options, node) {
-    if (!strcmp(sec, entry->sec) && !strcmp(key, entry->key)) {
+    if (!strcmp(section, entry->sec) && !strcmp(key, entry->key)) {
       return atoi(entry->val);
     }
   }
-  return defval;
+  return defaultValue;
 }
 
 /*
 ===================================================================================================
-spe_opt_string
+SpeOptString
 ===================================================================================================
 */
 const char* 
-spe_opt_string(char* sec, char* key, const char* defval) {
-  if (!key) return defval;
-  if (!sec) sec = "global";
-  spe_opt_t* entry = NULL;
+SpeOptString(char* section, char* key, const char* defaultValue) {
+  if (!key) return defaultValue;
+  if (!section) section = "global";
+  speOpt_t* entry = NULL;
   list_for_each_entry(entry, &options, node) {
-    if (!strcmp(sec, entry->sec) && !strcmp(key, entry->key)) {
+    if (!strcmp(section, entry->sec) && !strcmp(key, entry->key)) {
       return entry->val;
     }
   }
-  return defval;
+  return defaultValue;
 }
 
 /*
@@ -83,12 +83,12 @@ spe_opt_parse_file
 ===================================================================================================
 */
 bool 
-spe_opt_create(const char* fname) {
+speOptCreate(const char* configFileName) {
   char sec[SEC_MAXLEN];
   char key[KEY_MAXLEN];
   char val[VAL_MAXLEN];
 
-  spe_io_t* io = spe_io_create(fname);
+  spe_io_t* io = spe_io_create(configFileName);
   if (!io) return false;
   // set default section
   strcpy(sec, "global");
@@ -130,7 +130,7 @@ spe_opt_create(const char* fname) {
     val[VAL_MAXLEN-1] = 0;
     spe_slist_destroy(slist);
     // set option value
-    spe_opt_set(sec, key, val);
+    speOptSet(sec, key, val);
   }
   spe_io_destroy(io);
   return true;
@@ -138,12 +138,12 @@ spe_opt_create(const char* fname) {
 
 /*
 ===================================================================================================
-spe_opt_destroy
+speOptDestroy
 ===================================================================================================
 */
 void
-spe_opt_destroy() {
-  spe_opt_t *entry, *tmp;
+speOptDestroy() {
+  speOpt_t *entry, *tmp;
   list_for_each_entry_safe(entry, tmp, &options, node) {
     list_del_init(&entry->node);
     free(entry);

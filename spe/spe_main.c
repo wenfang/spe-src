@@ -14,14 +14,7 @@ bool g_stop;
 bool
 spe_main_procs(int procs) {
   if (procs <= 1) return false;
-  if (g_server && g_server->accept_mutex) return false;
-  if (g_server) {
-    g_server->accept_mutex = spe_shmux_create();
-    if (!g_server->accept_mutex) {
-      SPE_LOG_ERR("spe_shmux_create error");
-      return false;
-    }
-  }
+  if (!speServerUseAcceptMutex()) return false;
   spe_spawn(procs);
   spe_epoll_fork();
   return true;
@@ -34,7 +27,7 @@ main(int argc, char* argv[]) {
     return 1;
   }
   // parse config file
-  if (!spe_opt_create(argv[1])) {
+  if (!speOptCreate(argv[1])) {
     fprintf(stderr, "[ERROR] Parse File %s Error ...\n", argv[1]);
     return 1;
   }
@@ -52,14 +45,14 @@ main(int argc, char* argv[]) {
     fprintf(stderr, "[ERROR] mod_init...\n");
     return 1;
   }
-  spe_server_start();
+  speServerStart();
   // enter loop
   while (!g_stop) {
     unsigned timeout = 300;
     if (g_task_num) timeout = 0;
-    spe_server_before_loop();
+    speServerBeforeLoop();
     spe_epoll_process(timeout);
-    spe_server_after_loop();
+    speServerAfterLoop();
     spe_task_process();
     spe_timer_process();
     spe_signal_process();
@@ -68,6 +61,6 @@ main(int argc, char* argv[]) {
     fprintf(stderr, "[ERROR] mod_exit...\n");
     return 1;
   }
-  spe_opt_destroy();
+  speOptDestroy();
   return 0;
 }

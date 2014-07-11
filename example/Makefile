@@ -3,12 +3,12 @@ INCLUDE=../spe
 OBJS=pf.o iot.o rds_client.o rdspool.o
 
 .c.o:
-	gcc -DDEBUG -pg -g -fPIC -std=gnu99 -pthread -Wall -I$(INCLUDE) -c $< -o $@
+	gcc -O2 -fPIC -std=gnu99 -pthread -Wall -I$(INCLUDE) -c $< -o $@
 
 all:pf iot rdspool rds_client rdspool
 
 pf:pf.o
-	gcc -DDEBUG -pg -g -fPIC -std=gnu99 -lpthread -lm -Wall pf.o $(BUILD)/libspe.a -o pf
+	gcc -O2 -fPIC -std=gnu99 -lpthread -lm -Wall pf.o $(BUILD)/libspe.a -o pf
 
 iot:iot.o
 	gcc -DDEBUG -pg -g -fPIC -std=gnu99 -lpthread -lm -Wall iot.o $(BUILD)/libspe.a -o iot

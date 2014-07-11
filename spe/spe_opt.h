@@ -4,15 +4,15 @@
 #include <stdbool.h>
 
 extern int
-spe_opt_int(char* sec, char* key, int defval);
+SpeOptInt(char* section, char* key, int defaultValue);
 
 extern const char*
-spe_opt_string(char* sec, char* key, const char* defval);
+SpeOptString(char* section, char* key, const char* defaultValue);
 
 extern bool 
-spe_opt_create(const char* fname);
+speOptCreate(const char* configFileName);
 
 extern void
-spe_opt_destroy();
+speOptDestroy();
 
 #endif

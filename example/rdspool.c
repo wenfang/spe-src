@@ -83,17 +83,18 @@ run(unsigned cfd) {
 
 bool
 mod_init(void) {
-  int port = spe_opt_int("rdspool", "port", 7879);
+  int port = SpeOptInt("rdspool", "port", 7879);
   pool = spe_pool_create(128, (spe_pool_Free)spe_redis_destroy);
   if (!pool) {
     fprintf(stderr, "redis pool create error\n");
     return false;
   }
-  spe_server_init("127.0.0.1", port, run);
+  SpeServerInit("127.0.0.1", port, run);
   return true;
 }
 
 bool
 mod_exit(void) {
+  SpeServerDeinit();
   return true;
 }

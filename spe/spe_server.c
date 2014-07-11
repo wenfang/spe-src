@@ -7,7 +7,16 @@
 #include <string.h>
 #include <errno.h>
 
-spe_server_t* g_server;
+struct spe_server_s {
+  unsigned            _sfd;
+  spe_server_Handler  _handler;
+  spe_task_t          _listen_task;
+  pthread_mutex_t*    _accept_mutex;
+  unsigned            _accept_mutex_hold;
+};
+typedef struct spe_server_s spe_server_t;
+
+static spe_server_t* g_server;
 
 static void
 server_accept() {
@@ -26,11 +35,68 @@ server_accept() {
 
 /*
 ===================================================================================================
-spe_server_init
+speServerUseAcceptMutex
 ===================================================================================================
 */
 bool
-spe_server_init(const char* addr, int port, spe_server_Handler handler) {
+speServerUseAcceptMutex() {
+  if (!g_server) return false;
+  if (g_server->_accept_mutex) return true;
+  g_server->_accept_mutex = spe_shmux_create();
+  if (!g_server->_accept_mutex) {
+    SPE_LOG_ERR("spe_shmux_create error");
+    return false;
+  }
+  return true;
+}
+
+/*
+===================================================================================================
+speServerStart
+===================================================================================================
+*/
+void
+speServerStart() {
+  if (!g_server || g_server->_accept_mutex) return;
+  spe_epoll_enable(g_server->_sfd, SPE_EPOLL_LISTEN, &g_server->_listen_task);
+}
+
+/*
+===================================================================================================
+speServerBeforeLoop
+===================================================================================================
+*/
+void
+speServerBeforeLoop() {
+  if (!g_server || !g_server->_accept_mutex) return;
+  if (!pthread_mutex_trylock(g_server->_accept_mutex)) {
+    if (g_server->_accept_mutex_hold) return;
+    g_server->_accept_mutex_hold = 1;
+    spe_epoll_enable(g_server->_sfd, SPE_EPOLL_LISTEN, &g_server->_listen_task);
+  } else {
+    if (g_server->_accept_mutex_hold) spe_epoll_disable(g_server->_sfd, SPE_EPOLL_LISTEN);
+    g_server->_accept_mutex_hold = 0;
+  }
+}
+
+/*
+===================================================================================================
+speServerAfterLoop
+===================================================================================================
+*/
+void
+speServerAfterLoop() {
+  if (!g_server || !g_server->_accept_mutex) return;
+  if (g_server->_accept_mutex_hold) pthread_mutex_unlock(g_server->_accept_mutex);
+}
+
+/*
+===================================================================================================
+SpeServerInit
+===================================================================================================
+*/
+bool
+SpeServerInit(const char* addr, int port, spe_server_Handler handler) {
   if (g_server) return false;
   // create server fd
   int sfd = spe_sock_tcp_server(addr, port);
@@ -55,16 +121,14 @@ spe_server_init(const char* addr, int port, spe_server_Handler handler) {
 
 /*
 ===================================================================================================
-spe_server_deinit
+SpeServerDeinit
 ===================================================================================================
 */
 void
-spe_server_deinit() {
+SpeServerDeinit() {
   if (!g_server) return;
-  if (g_server->accept_mutex) {
-    spe_shmux_destroy(g_server->accept_mutex);
-    g_server->accept_mutex = NULL;
-  }
+  if (g_server->_accept_mutex) spe_shmux_destroy(g_server->_accept_mutex);
   spe_sock_close(g_server->_sfd);
+  free(g_server);
   g_server = NULL; 
 }
