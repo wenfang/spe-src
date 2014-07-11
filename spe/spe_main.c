@@ -3,7 +3,6 @@
 #include "spe_opt.h"
 #include "spe_signal.h"
 #include "spe_epoll.h"
-#include "spe_timer.h"
 #include "spe_task.h"
 #include "spe_util.h"
 #include <stdio.h>

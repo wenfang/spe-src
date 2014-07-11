@@ -2,7 +2,7 @@
 #define __SPE_CONN_H
 
 #include "spe_epoll.h"
-#include "spe_timer.h"
+#include "spe_task.h"
 #include "spe_string.h"
 #include "spe_handler.h"
 #include "spe_util.h"

@@ -14,7 +14,6 @@
 #include "spe_log.h"
 #include "spe_main.h"
 #include "spe_epoll.h"
-#include "spe_timer.h"
 #include "spe_handler.h"
 #include "spe_task.h"
 #include "spe_server.h"
