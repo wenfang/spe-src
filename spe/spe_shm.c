@@ -4,6 +4,11 @@
 #include <stdlib.h>
 #include <sys/mman.h>
 
+/*
+===================================================================================================
+spe_shm_alloc
+===================================================================================================
+*/
 spe_shm_t*
 spe_shm_alloc(unsigned size) {
   spe_shm_t* shm = calloc(1, sizeof(spe_shm_t));
@@ -17,18 +22,30 @@ spe_shm_alloc(unsigned size) {
     SPE_LOG_ERR("spe shm alloc mmap error");
     free(shm);
     return NULL; 
-  } shm->size = size;
+  } 
+  shm->size = size;
   return shm;
 }
 
+/*
+===================================================================================================
+spe_shm_free
+===================================================================================================
+*/
 void
 spe_shm_free(spe_shm_t* shm) {
   ASSERT(shm);
   if (munmap(shm->addr, shm->size) == -1) {
     SPE_LOG_ERR("spe_shm_free error");
   }
+  free(shm);
 }
 
+/*
+===================================================================================================
+spe_shmux_create
+===================================================================================================
+*/
 pthread_mutex_t*
 spe_shmux_create() {
   pthread_mutex_t* shmux = mmap(NULL, sizeof(pthread_mutex_t), PROT_READ|PROT_WRITE,
@@ -44,6 +61,11 @@ spe_shmux_create() {
   return shmux;
 }
 
+/*
+===================================================================================================
+spe_shmux_destroy
+===================================================================================================
+*/
 void
 spe_shmux_destroy(pthread_mutex_t* shmux) {
   ASSERT(shmux);
@@ -52,4 +74,3 @@ spe_shmux_destroy(pthread_mutex_t* shmux) {
     SPE_LOG_ERR("spe_shmux_destroy error");
   }
 }
-

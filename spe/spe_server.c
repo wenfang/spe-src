@@ -12,8 +12,12 @@ spe_server_t* g_server;
 static void
 server_accept() {
   int cfd = spe_sock_accept(g_server->_sfd);
-  if (cfd <= 0) return;
+  if (cfd <= 0) {
+    SPE_LOG_ERR("spe_sock_accept error");
+    return;
+  }
   if (!g_server->_handler) {
+    SPE_LOG_ERR("g_server no handler set");
     spe_sock_close(cfd);
     return;
   }
@@ -27,18 +31,21 @@ spe_server_init
 */
 bool
 spe_server_init(const char* addr, int port, spe_server_Handler handler) {
+  if (g_server) return false;
+  // create server fd
   int sfd = spe_sock_tcp_server(addr, port);
   if (sfd < 0) {
     SPE_LOG_ERR("spe_sock_tcp_server error");
     return false;
   }
+  spe_sock_set_block(sfd, 0);
+  // create g_server
   g_server = calloc(1, sizeof(spe_server_t));
   if (!g_server) {
     SPE_LOG_ERR("server struct alloc error");
     spe_sock_close(sfd);
     return false;
   }
-  spe_sock_set_block(sfd, 0);
   g_server->_sfd      = sfd;
   g_server->_handler  = handler;
   spe_task_init(&g_server->_listen_task);
