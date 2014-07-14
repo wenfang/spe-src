@@ -100,11 +100,11 @@ mjmap_Search
 static spe_map_item_t*
 spe_map_search(spe_map_t* map, const char* key) {
   unsigned int hashvalue = genhashvalue((void*)key, strlen(key));
-  unsigned int index = hashvalue % map->_size;
+  unsigned int index = hashvalue % map->size;
   // search entry
   spe_map_item_t* item = NULL;
   struct hlist_node* entry;
-  hlist_for_each_entry(item, entry, &map->_head[index], _node) { 
+  hlist_for_each_entry(item, entry, &map->hashHead[index], _node) { 
     if (strcmp(item->_key, key) == 0) return item;
   }
   return NULL;
@@ -132,13 +132,13 @@ int
 spe_map_set(spe_map_t* map, const char* key, void* obj, spe_map_Handler handler) {
   if (!map || !key) return -1;
   unsigned int hashvalue = genhashvalue((void*)key, strlen(key));
-  unsigned int index = hashvalue % map->_size;
+  unsigned int index = hashvalue % map->size;
   spe_map_item_t* item = spe_map_search(map, key);
   if (item) return -2;
   item = spe_map_item_create(key, obj, handler);
   if (!item) return -1;
   // add to list and elem list
-  hlist_add_head(&item->_node, &map->_head[index]);
+  hlist_add_head(&item->_node, &map->hashHead[index]);
   return 0;
 }
 
@@ -168,8 +168,8 @@ spe_map_clean(spe_map_t* map) {
 	spe_map_item_t* item;
   struct hlist_node* entry;
   struct hlist_node* tmp;
-  for (int i=0; i<map->_size; i++) {
-    hlist_for_each_entry_safe(item, entry, tmp, &map->_head[i], _node) { 
+  for (int i=0; i<map->size; i++) {
+    hlist_for_each_entry_safe(item, entry, tmp, &map->hashHead[i], _node) { 
 		  hlist_del(&item->_node);
 		  spe_map_item_destroy(item);
 	  }
@@ -189,8 +189,8 @@ spe_map_create(unsigned mapsize) {
     SPE_LOG_ERR("map calloc error");
     return NULL;
   }
-  map->_size = mapsize;
-  for (int i=0; i<mapsize; i++) INIT_HLIST_HEAD(&map->_head[i]);
+  map->size = mapsize;
+  for (int i=0; i<mapsize; i++) INIT_HLIST_HEAD(&map->hashHead[i]);
   return map;
 }
 

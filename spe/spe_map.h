@@ -6,11 +6,12 @@
 
 typedef bool (*spe_map_Handler)(void*);
 
-struct spe_map_s {
-  unsigned          _size;          // hash length of elem
-  struct hlist_head _head[0];       // element of mjitem
+struct SpeMap_s {
+  unsigned          size;           // element size
+  struct list_head  listHead;       // list Head
+  struct hlist_head hashHead[0];       // element of mjitem
 };
-typedef struct spe_map_s spe_map_t;
+typedef struct SpeMap_s spe_map_t;
 
 extern spe_map_t* 
 spe_map_create(unsigned mapsize);
@@ -28,6 +29,6 @@ extern void*
 spe_map_get(spe_map_t* map, const char* key);
 
 extern int 
-spe_map_set(spe_map_t* map, const char* key, void* obj, spe_map_Handler handler);
+SpeMap_set(spe_map_t* map, const char* key, void* obj, spe_map_Handler handler);
 
 #endif
