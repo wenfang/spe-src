@@ -118,6 +118,7 @@ readNormal(void* arg) {
     int pos = spe_string_search(conn->readBuffer, conn->delim);
     if (pos != -1) {
       spe_string_copyb(conn->Buffer, conn->readBuffer->data, pos);
+      spe_string_cats(conn->Buffer, conn->delim);
       spe_string_consume(conn->readBuffer, pos + strlen(conn->delim));
       goto end_out;
     }

@@ -8,7 +8,6 @@ static int
 httpParserUrl(http_parser* parser, const char* at, size_t length) {
   SpeHttpRequest_t* request = parser->data;
   spe_string_copyb(request->url, at, length);
-  fprintf(stdout, "url: %s\n", request->url->data);
   return 0;
 }
 
@@ -45,7 +44,6 @@ driver_machine(void* arg) {
       }
       request->status = HTTP_CLOSE;
       SpeConnWrite(request->conn, request->url);
-      fprintf(stdout, "writeBuffer: %s\n", request->conn->writeBuffer->data);
       SpeConnFlush(request->conn);
       break;
     case HTTP_CLOSE:
