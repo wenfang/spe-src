@@ -10,9 +10,9 @@
 #include <errno.h>
 
 struct spe_epoll_s {
-  spe_task_t*   _read_task;
-  spe_task_t*   _write_task;
-  unsigned      _mask:2;             // mask set in epoll
+  SpeTask_t*  _read_task;
+  SpeTask_t*  _write_task;
+  unsigned    _mask:2;             // mask set in epoll
 };
 typedef struct spe_epoll_s spe_epoll_t;
 
@@ -56,7 +56,7 @@ spe_epoll_enable
 ===================================================================================================
 */
 bool
-spe_epoll_enable(unsigned fd, unsigned mask, spe_task_t* task) {
+spe_epoll_enable(unsigned fd, unsigned mask, SpeTask_t* task) {
   ASSERT(task);
   if (fd >= MAX_FD) return false;
   spe_epoll_t* epoll_t = &all_epoll[fd];
@@ -104,10 +104,10 @@ spe_epoll_process(int timeout) {
     }
     spe_epoll_t* epoll_t = &all_epoll[e->data.fd];
     if ((e->events & EPOLLIN) && (epoll_t->_mask & SPE_EPOLL_READ)) {
-      spe_task_enqueue(epoll_t->_read_task);
+      SpeTaskEnqueue(epoll_t->_read_task);
     }
     if ((e->events & EPOLLOUT) && (epoll_t->_mask & SPE_EPOLL_WRITE)) {
-      spe_task_enqueue(epoll_t->_write_task);
+      SpeTaskEnqueue(epoll_t->_write_task);
     }
   }
 }

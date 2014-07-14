@@ -10,7 +10,7 @@
 #define SPE_EPOLL_WRITE  2
 
 extern bool
-spe_epoll_enable(unsigned fd, unsigned mask, spe_task_t* task);
+spe_epoll_enable(unsigned fd, unsigned mask, SpeTask_t* task);
 
 extern bool
 spe_epoll_disable(unsigned fd, unsigned mask);

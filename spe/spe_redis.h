@@ -17,6 +17,10 @@ struct spe_redis_s {
 };
 typedef struct spe_redis_s spe_redis_t;
 
+struct speRedisPool_s {
+};
+typedef struct speRedisPool_s speRedisPool_t;
+
 extern void
 spe_redis_do(spe_redis_t* sr, spe_handler_t handler, int nargs, ...);
 

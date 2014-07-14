@@ -13,7 +13,7 @@
 struct spe_server_s {
   unsigned          _sfd;
   speServerHandler  _handler;
-  spe_task_t        _listen_task;
+  SpeTask_t        _listen_task;
   pthread_mutex_t*  _accept_mutex;
   unsigned          _accept_mutex_hold;
 };
@@ -117,7 +117,7 @@ SpeServerInit(const char* addr, int port, speServerHandler handler) {
   }
   g_server->_sfd      = sfd;
   g_server->_handler  = handler;
-  spe_task_init(&g_server->_listen_task);
+  SpeTaskInit(&g_server->_listen_task);
   g_server->_listen_task.handler = SPE_HANDLER0(server_accept);
   return true;
 }

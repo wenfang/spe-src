@@ -49,12 +49,11 @@ main(int argc, char* argv[]) {
   // enter loop
   while (!g_stop) {
     unsigned timeout = 300;
-    if (g_task_num) timeout = 0;
+    if (gTaskNum) timeout = 0;
     speServerBeforeLoop();
     spe_epoll_process(timeout);
     speServerAfterLoop();
-    spe_task_process();
-    spe_timer_process();
+    speTaskProcess();
     spe_signal_process();
   }
   if (!mod_exit()) {

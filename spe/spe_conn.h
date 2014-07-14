@@ -10,12 +10,12 @@
 
 struct spe_conn_s {
   int             _fd;
-  spe_task_t      _read_task;
-  spe_task_t      _write_task;
+  SpeTask_t       _read_task;
+  SpeTask_t       _write_task;
   unsigned        _read_expire_time;
   unsigned        _write_expire_time;
-  spe_task_t      read_callback_task;
-  spe_task_t      write_callback_task;
+  SpeTask_t       read_callback_task;
+  SpeTask_t       write_callback_task;
   spe_string_t*   _read_buffer;
   spe_string_t*   _write_buffer;
   spe_string_t*   buffer;

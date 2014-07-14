@@ -6,7 +6,7 @@
 #include "spe_handler.h"
 #include <stdbool.h>
 
-struct spe_task_s {
+struct SpeTask_s {
   spe_handler_t     handler;
   unsigned long     _expire;
   struct rb_node    _timer_node;
@@ -15,29 +15,26 @@ struct spe_task_s {
   unsigned          _intask:1;    // task in running queue?
   unsigned          timeout:1;
 };
-typedef struct spe_task_s spe_task_t;
+typedef struct SpeTask_s SpeTask_t;
 
-extern unsigned g_task_num;
-
-extern void
-spe_task_init(spe_task_t* task);
+extern unsigned gTaskNum;
 
 extern void
-spe_task_enqueue(spe_task_t* task);
+SpeTaskInit(SpeTask_t* task);
 
 extern void
-spe_task_dequeue(spe_task_t* task);
+SpeTaskEnqueue(SpeTask_t* task);
 
 extern void
-spe_task_enqueue_timer(spe_task_t* task, unsigned long ms);
+SpeTaskDequeue(SpeTask_t* task);
 
 extern void
-spe_task_dequeue_timer(spe_task_t* task);
+SpeTaskEnqueueTimer(SpeTask_t* task, unsigned long ms);
 
 extern void
-spe_task_process();
+SpeTaskDequeueTimer(SpeTask_t* task);
 
 extern void
-spe_timer_process();
+speTaskProcess();
 
 #endif
