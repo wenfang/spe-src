@@ -41,8 +41,8 @@ static void
 driver_machine(void* arg) {
   SpeHttpRequest_t* request = arg;
   if (request->conn->Error || request->conn->Closed) {
-    SpeConnDestroy(request->conn);
-    free(request);
+    SPE_LOG_ERR("request conn error or closed");
+    SpeHttpRequestDestroy(request);
     return;
   }
   int res;
@@ -62,7 +62,6 @@ driver_machine(void* arg) {
       }
       request->status = HTTP_CLOSE;
       SpeConnWrite(request->conn, request->url);
-      SpeConnWrites(request->conn, "\n");
       SpeConnFlush(request->conn);
       break;
     case HTTP_CLOSE:
@@ -115,7 +114,7 @@ httpHandler(SpeConn_t* conn) {
     SpeConnDestroy(conn);
     return;
   }
-  request->status       = HTTP_READHEADER;
+  request->status             = HTTP_READHEADER;
   conn->ReadCallback.Handler  = SPE_HANDLER1(driver_machine, request);
   conn->WriteCallback.Handler = SPE_HANDLER1(driver_machine, request);
   SpeConnReaduntil(conn, "\r\n\r\n");
