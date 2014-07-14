@@ -7,13 +7,12 @@
 #include <stdbool.h>
 
 struct SpeTask_s {
-  spe_handler_t     handler;
-  unsigned long     _expire;
-  struct rb_node    _timer_node;
-  struct list_head  _task_node;
-  unsigned          _intimer:1;   // task in timer queue?
-  unsigned          _intask:1;    // task in running queue?
-  unsigned          timeout:1;
+  spe_handler_t     Handler;
+  unsigned long     expire;
+  struct rb_node    timerNode;
+  struct list_head  taskNode;
+  unsigned          status;
+  unsigned          Timeout:1;
 };
 typedef struct SpeTask_s SpeTask_t;
 
@@ -22,16 +21,16 @@ extern unsigned gTaskNum;
 extern void
 SpeTaskInit(SpeTask_t* task);
 
-extern void
+extern bool 
 SpeTaskEnqueue(SpeTask_t* task);
 
-extern void
+extern bool
 SpeTaskDequeue(SpeTask_t* task);
 
-extern void
+extern bool
 SpeTaskEnqueueTimer(SpeTask_t* task, unsigned long ms);
 
-extern void
+extern bool
 SpeTaskDequeueTimer(SpeTask_t* task);
 
 extern void

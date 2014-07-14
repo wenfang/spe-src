@@ -13,7 +13,7 @@
 
 static void 
 driver_machine(spe_redis_t* sr) {
-  if (sr->status != SPE_REDIS_INIT && (sr->conn->error || sr->conn->closed)) {
+  if (sr->status != SPE_REDIS_INIT && (sr->conn->Error || sr->conn->Closed)) {
     spe_conn_destroy(sr->conn);
     sr->conn = NULL;
     sr->status = SPE_REDIS_INIT;
@@ -41,8 +41,8 @@ driver_machine(spe_redis_t* sr) {
       }
       sr->error = 0;
       sr->status = SPE_REDIS_CONN;
-      sr->conn->read_callback_task.handler = SPE_HANDLER1(driver_machine, sr);
-      sr->conn->write_callback_task.handler = SPE_HANDLER1(driver_machine, sr);
+      sr->conn->ReadCallback.Handler  = SPE_HANDLER1(driver_machine, sr);
+      sr->conn->WriteCallback.Handler = SPE_HANDLER1(driver_machine, sr);
       spe_conn_connect(sr->conn, sr->host, sr->port);
       break;
     case SPE_REDIS_CONN:
@@ -60,16 +60,16 @@ driver_machine(spe_redis_t* sr) {
       spe_conn_readuntil(sr->conn, "\r\n");
       break;
     case SPE_REDIS_RECV_LINE:
-      if (sr->conn->buffer->data[0] == '+' || sr->conn->buffer->data[0] == '-' ||
-          sr->conn->buffer->data[0] == ':') {
-        spe_slist_append(sr->recv_buffer, sr->conn->buffer);
+      if (sr->conn->Buffer->data[0] == '+' || sr->conn->Buffer->data[0] == '-' ||
+          sr->conn->Buffer->data[0] == ':') {
+        spe_slist_append(sr->recv_buffer, sr->conn->Buffer);
         sr->status = SPE_REDIS_CONN;
         SPE_HANDLER_CALL(sr->handler);
         return;
       }
-      if (sr->conn->buffer->data[0] == '$') {
-        spe_slist_append(sr->recv_buffer, sr->conn->buffer);
-        int resSize = atoi(sr->conn->buffer->data+1);
+      if (sr->conn->Buffer->data[0] == '$') {
+        spe_slist_append(sr->recv_buffer, sr->conn->Buffer);
+        int resSize = atoi(sr->conn->Buffer->data+1);
         if (resSize <= 0) {
           sr->status = SPE_REDIS_CONN;
           SPE_HANDLER_CALL(sr->handler);
@@ -79,13 +79,13 @@ driver_machine(spe_redis_t* sr) {
         spe_conn_readbytes(sr->conn, resSize+2);
         return;
       }
-      if (sr->conn->buffer->data[0] == '*') {
+      if (sr->conn->Buffer->data[0] == '*') {
         // TODO: ADD BLOCK SUPPOR
         return;
       }
       break;
     case SPE_REDIS_RECV_DATA:
-      spe_slist_appendb(sr->recv_buffer, sr->conn->buffer->data, sr->conn->buffer->len-2);
+      spe_slist_appendb(sr->recv_buffer, sr->conn->Buffer->data, sr->conn->Buffer->len-2);
       sr->status = SPE_REDIS_CONN;
       SPE_HANDLER_CALL(sr->handler);
       break;

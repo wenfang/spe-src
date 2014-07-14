@@ -5,6 +5,11 @@
 #include <stdlib.h>
 #include <pthread.h>
 
+#define SPE_TASK_FREE   0
+#define SPE_TASK_TIMER  1
+#define SPE_TASK_QUEUE  2
+#define SPE_TASK_RUN    4
+
 unsigned gTaskNum;
 
 static LIST_HEAD(task_head);
@@ -19,13 +24,12 @@ SpeTaskInit
 void
 SpeTaskInit(SpeTask_t* task) {
   ASSERT(task);
-  task->handler   = SPE_HANDLER_NULL;
-  task->_expire   = 0;
-  rb_init_node(&task->_timer_node);
-  INIT_LIST_HEAD(&task->_task_node);
-  task->_intimer  = 0;
-  task->_intask   = 0;
-  task->timeout   = 0;
+  task->Handler = SPE_HANDLER_NULL;
+  task->expire  = 0;
+  rb_init_node(&task->timerNode);
+  INIT_LIST_HEAD(&task->taskNode);
+  task->status  = SPE_TASK_FREE;
+  task->Timeout = 0;
 }
 
 /*
@@ -33,26 +37,26 @@ SpeTaskInit(SpeTask_t* task) {
 SpeTaskEnqueue
 ===================================================================================================
 */
-void
+bool
 SpeTaskEnqueue(SpeTask_t* task) {
   ASSERT(task);
   // double check
-  if (task->_intask) return;
+  if (task->status == SPE_TASK_QUEUE || task->status == SPE_TASK_RUN) return false;
   pthread_mutex_lock(&task_lock);
-  if (task->_intask) {
+  if (task->status == SPE_TASK_QUEUE || task->status == SPE_TASK_RUN) {
     pthread_mutex_lock(&task_lock);
-    return;
+    return false;
   }
-  if (task->_intimer) {
-    rb_erase(&task->_timer_node, &timer_head);
-    rb_init_node(&task->_timer_node);
-    task->_intimer = 0;
+  if (task->status == SPE_TASK_TIMER) {
+    rb_erase(&task->timerNode, &timer_head);
+    rb_init_node(&task->timerNode);
   }
-  list_add_tail(&task->_task_node, &task_head);
-  task->_intask = 1;
+  list_add_tail(&task->taskNode, &task_head);
+  task->status = SPE_TASK_QUEUE;
   gTaskNum++;
   pthread_mutex_unlock(&task_lock);
   spe_epoll_wakeup();
+  return true;
 }
 
 /*
@@ -60,20 +64,21 @@ SpeTaskEnqueue(SpeTask_t* task) {
 SpeTaskDequeue
 ===================================================================================================
 */
-void
+bool
 SpeTaskDequeue(SpeTask_t* task) {
   ASSERT(task);
   // double check
-  if (!task->_intask) return;
+  if (task->status != SPE_TASK_QUEUE) return false;
   pthread_mutex_lock(&task_lock);
-  if (!task->_intask) {
+  if (task->status != SPE_TASK_QUEUE) {
     pthread_mutex_unlock(&task_lock);
-    return;
+    return false;
   }
-  list_del_init(&task->_task_node);
-  task->_intask = 0;
+  list_del_init(&task->taskNode);
+  task->status = SPE_TASK_FREE;
   gTaskNum--;
   pthread_mutex_unlock(&task_lock);
+  return true;
 }
 
 /*
@@ -81,37 +86,37 @@ SpeTaskDequeue(SpeTask_t* task) {
 SpeTaskEnqueue_timer
 ===================================================================================================
 */
-void
+bool
 SpeTaskEnqueueTimer(SpeTask_t* task, unsigned long ms) {
   ASSERT(task);
-  if (task->_intask) return;
+  if (task->status == SPE_TASK_QUEUE || task->status == SPE_TASK_RUN) return false;
   // insert into timer list
   pthread_mutex_lock(&task_lock);
-  if (task->_intask) {
+  if (task->status == SPE_TASK_QUEUE || task->status == SPE_TASK_RUN) {
     pthread_mutex_unlock(&task_lock);
-    return;
+    return false;
   }
-  if (task->_intimer) {
-    rb_erase(&task->_timer_node, &timer_head);
-    rb_init_node(&task->_timer_node);
-    task->_intimer = 0;
+  if (task->status == SPE_TASK_TIMER) {
+    rb_erase(&task->timerNode, &timer_head);
+    rb_init_node(&task->timerNode);
   }
-  task->_expire = spe_current_time() + ms;
-  task->timeout = 0;
+  task->expire = spe_current_time() + ms;
+  task->Timeout = 0;
   struct rb_node **new = &timer_head.rb_node, *parent = NULL;
   while (*new) {
-    SpeTask_t* curr = rb_entry(*new, SpeTask_t, _timer_node);
+    SpeTask_t* curr = rb_entry(*new, SpeTask_t, timerNode);
     parent = *new;
-    if (task->_expire < curr->_expire) {
+    if (task->expire < curr->expire) {
       new = &((*new)->rb_left);
     } else {
       new = &((*new)->rb_right);
     }
   }
-  rb_link_node(&task->_timer_node, parent, new);
-  rb_insert_color(&task->_timer_node, &timer_head);
-  task->_intimer = 1;
+  rb_link_node(&task->timerNode, parent, new);
+  rb_insert_color(&task->timerNode, &timer_head);
+  task->status = SPE_TASK_TIMER;
   pthread_mutex_unlock(&task_lock);
+  return true;
 }
 
 /*
@@ -119,19 +124,20 @@ SpeTaskEnqueueTimer(SpeTask_t* task, unsigned long ms) {
 SpeTaskDequeueTimer
 ===================================================================================================
 */
-void
+bool
 SpeTaskDequeueTimer(SpeTask_t* task) {
   ASSERT(task);
-  if (!task->_intimer) return;
+  if (task->status != SPE_TASK_TIMER) return false;
   pthread_mutex_lock(&task_lock);
-  if (!task->_intimer) {
+  if (task->status != SPE_TASK_TIMER) {
     pthread_mutex_lock(&task_lock);
-    return;
+    return false;
   }
-  rb_erase(&task->_timer_node, &timer_head);
-  task->_intimer = 0;
-  rb_init_node(&task->_timer_node);
+  rb_erase(&task->timerNode, &timer_head);
+  task->status = SPE_TASK_FREE;
+  rb_init_node(&task->timerNode);
   pthread_mutex_unlock(&task_lock);
+  return true;
 }
 
 /*
@@ -148,15 +154,15 @@ speTaskProcess() {
     pthread_mutex_lock(&task_lock);
     struct rb_node* first = rb_first(&timer_head);
     while (first) {
-      SpeTask_t* task = rb_entry(first, SpeTask_t, _timer_node);
-      if (task->_expire > curr_time) break;
-      rb_erase(&task->_timer_node, &timer_head);
-      rb_init_node(&task->_timer_node);
-      task->_intimer = 0;
-      task->timeout = 1;
+      SpeTask_t* task = rb_entry(first, SpeTask_t, timerNode);
+      if (task->expire > curr_time) break;
+      ASSERT(task->status == SPE_TASK_TIMER);
+      rb_erase(&task->timerNode, &timer_head);
+      rb_init_node(&task->timerNode);
+      task->Timeout = 1;
       // add to task queue
-      list_add_tail(&task->_task_node, &task_head);
-      task->_intask = 1;
+      list_add_tail(&task->taskNode, &task_head);
+      task->status  = SPE_TASK_QUEUE;
       gTaskNum++;
       first = rb_first(&timer_head);
     } 
@@ -165,16 +171,21 @@ speTaskProcess() {
   // run task
   while (gTaskNum) {
     pthread_mutex_lock(&task_lock);
-    SpeTask_t* task = list_first_entry(&task_head, SpeTask_t, _task_node);
+    SpeTask_t* task = list_first_entry(&task_head, SpeTask_t, taskNode);
     if (!task) {
       pthread_mutex_unlock(&task_lock);
       break;
     }
-    list_del_init(&task->_task_node);
-    task->_intask = 0;
+    list_del_init(&task->taskNode);
+    ASSERT(task->status == SPE_TASK_QUEUE);
+    task->status = SPE_TASK_RUN;
     gTaskNum--;
     pthread_mutex_unlock(&task_lock);
-    SPE_HANDLER_CALL(task->handler);
+    SPE_HANDLER_CALL(task->Handler);
+    // set task stauts to free
+    pthread_mutex_lock(&task_lock);
+    task->status = SPE_TASK_FREE;
+    pthread_mutex_unlock(&task_lock);
   }
 }
 

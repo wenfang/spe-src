@@ -15,7 +15,7 @@ driver_machine(void* arg) {
   pf_conn_t* pf_conn = arg;
   cJSON *obj;
   spe_conn_t* conn = pf_conn->conn;
-  if (conn->closed || conn->error) {
+  if (conn->closed || conn->Error) {
     spe_conn_destroy(conn);
     free(pf_conn);
     return;
@@ -51,8 +51,8 @@ run(unsigned cfd) {
     spe_conn_destroy(conn);
     return;
   }
-  conn->read_callback_task.handler  = SPE_HANDLER1(driver_machine, pf_conn);
-  conn->write_callback_task.handler = SPE_HANDLER1(driver_machine, pf_conn);
+  conn->ReadCallback.Handler  = SPE_HANDLER1(driver_machine, pf_conn);
+  conn->WriteCallback.Handler = SPE_HANDLER1(driver_machine, pf_conn);
   pf_conn->conn   = conn;
   pf_conn->status = PF_INIT;
   spe_conn_readuntil(pf_conn->conn, "\r\n\r\n");

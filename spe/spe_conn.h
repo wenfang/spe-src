@@ -9,26 +9,26 @@
 #include <string.h>
 
 struct spe_conn_s {
-  int             _fd;
-  SpeTask_t       _read_task;
-  SpeTask_t       _write_task;
-  unsigned        _read_expire_time;
-  unsigned        _write_expire_time;
-  SpeTask_t       read_callback_task;
-  SpeTask_t       write_callback_task;
-  spe_string_t*   _read_buffer;
-  spe_string_t*   _write_buffer;
-  spe_string_t*   buffer;
+  SpeTask_t       ReadCallback;
+  SpeTask_t       WriteCallback;
+  int             fd;
+  SpeTask_t       readTask;
+  SpeTask_t       writeTask;
+  unsigned        readExpireTime;
+  unsigned        writeExpireTime;
+  spe_string_t*   readBuffer;
+  spe_string_t*   writeBuffer;
+  spe_string_t*   Buffer;
   char*           _delim;
   unsigned        _rbytes;
-  unsigned        _init;
-  unsigned        _read_type:2;
-  unsigned        _write_type:1;
-  unsigned        connect_timeout:1;
-  unsigned        read_timeout:1;
-  unsigned        write_timeout:1;
-  unsigned        closed:1;
-  unsigned        error:1;
+  unsigned        _init:1;
+  unsigned        readType:2;
+  unsigned        writeType:1;
+  unsigned        ConnectTimeout:1;
+  unsigned        ReadTimeout:1;
+  unsigned        WriteTimeout:1;
+  unsigned        Closed:1;
+  unsigned        Error:1;
 };
 typedef struct spe_conn_s spe_conn_t;
 
@@ -47,22 +47,22 @@ spe_conn_read(spe_conn_t* conn);
 static inline bool
 spe_conn_writeb(spe_conn_t* conn, char* buf, unsigned len) {
   ASSERT(conn && buf);
-  if (conn->closed || conn->error) return false;
-  return spe_string_catb(conn->_write_buffer, buf, len);
+  if (conn->Closed || conn->Error) return false;
+  return spe_string_catb(conn->writeBuffer, buf, len);
 }
 
 static inline bool
 spe_conn_write(spe_conn_t* conn, spe_string_t* buf) {
   ASSERT(conn && buf);
-  if (conn->closed || conn->error) return false;
-  return spe_string_catb(conn->_write_buffer, buf->data, buf->len);
+  if (conn->Closed || conn->Error) return false;
+  return spe_string_catb(conn->writeBuffer, buf->data, buf->len);
 }
 
 static inline bool
 spe_conn_writes(spe_conn_t* conn, char* buf) {
   ASSERT(conn && buf);
-  if (conn->closed || conn->error) return false;
-  return spe_string_catb(conn->_write_buffer, buf, strlen(buf));
+  if (conn->Closed || conn->Error) return false;
+  return spe_string_catb(conn->writeBuffer, buf, strlen(buf));
 }
 
 extern bool

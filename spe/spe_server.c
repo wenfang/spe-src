@@ -118,7 +118,7 @@ SpeServerInit(const char* addr, int port, speServerHandler handler) {
   g_server->_sfd      = sfd;
   g_server->_handler  = handler;
   SpeTaskInit(&g_server->_listen_task);
-  g_server->_listen_task.handler = SPE_HANDLER0(server_accept);
+  g_server->_listen_task.Handler = SPE_HANDLER0(server_accept);
   return true;
 }
 

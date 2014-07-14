@@ -27,7 +27,7 @@ drive_machine(void* arg) {
   }
   switch (rds->status) {
     case RDS_INIT:
-      if (rds->conn->error || rds->conn->closed) {
+      if (rds->conn->Error || rds->conn->closed) {
         spe_conn_destroy(rds->conn);
         free(rds);
         return;
@@ -76,8 +76,8 @@ run(unsigned cfd) {
   }
   rds->conn = conn;
   rds->status = RDS_INIT;
-  rds->conn->read_callback_task.handler   = SPE_HANDLER1(drive_machine, rds);
-  rds->conn->write_callback_task.handler  = SPE_HANDLER1(drive_machine, rds);
+  rds->conn->ReadCallback.Handler   = SPE_HANDLER1(drive_machine, rds);
+  rds->conn->WriteCallback.Handler  = SPE_HANDLER1(drive_machine, rds);
   spe_conn_readuntil(rds->conn, "\r\n\r\n");
 }
 
