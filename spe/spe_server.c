@@ -13,7 +13,7 @@
 struct spe_server_s {
   unsigned          _sfd;
   speServerHandler  _handler;
-  SpeTask_t        _listen_task;
+  SpeTask_t         _listen_task;
   pthread_mutex_t*  _accept_mutex;
   unsigned          _accept_mutex_hold;
 };
@@ -22,7 +22,7 @@ typedef struct spe_server_s spe_server_t;
 static spe_server_t* g_server;
 
 static void
-server_accept() {
+serverAccept() {
   int cfd = spe_sock_accept(g_server->_sfd);
   if (cfd <= 0) {
     SPE_LOG_ERR("spe_sock_accept error");
@@ -118,7 +118,7 @@ SpeServerInit(const char* addr, int port, speServerHandler handler) {
   g_server->_sfd      = sfd;
   g_server->_handler  = handler;
   SpeTaskInit(&g_server->_listen_task);
-  g_server->_listen_task.Handler = SPE_HANDLER0(server_accept);
+  g_server->_listen_task.Handler = SPE_HANDLER0(serverAccept);
   return true;
 }
 
