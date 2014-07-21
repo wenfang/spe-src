@@ -302,16 +302,16 @@ spe_string_create
 ===================================================================================================
 */
 spe_string_t* 
-spe_string_create(unsigned default_size) {
-  if (!default_size) default_size = DEFAULT_SIZE;
-  spe_string_t* str = calloc(1, sizeof(spe_string_t)+default_size*sizeof(char));
+spe_string_create(unsigned defaultSize) {
+  if (!defaultSize) defaultSize = DEFAULT_SIZE;
+  spe_string_t* str = calloc(1, sizeof(spe_string_t)+defaultSize*sizeof(char));
   if (!str) {
-    SPE_LOG_ERR("calloc error");
+    SPE_LOG_ERR("spe_string_t calloc error");
     return NULL;
   }
   str->_start = str->_buffer;
   str->data   = str->_start;
-  str->_size  = default_size;
+  str->_size  = defaultSize;
   return str;
 }
 
