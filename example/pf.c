@@ -15,7 +15,7 @@ driver_machine(void* arg) {
   pf_conn_t* pf_conn = arg;
   cJSON *obj;
   spe_conn_t* conn = pf_conn->conn;
-  if (conn->closed || conn->Error) {
+  if (conn->Closed || conn->Error) {
     spe_conn_destroy(conn);
     free(pf_conn);
     return;
