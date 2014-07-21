@@ -46,7 +46,7 @@ spe_conn_read(spe_conn_t* conn);
 
 static inline bool
 spe_conn_writeb(spe_conn_t* conn, char* buf, unsigned len) {
-  ASSERT(conn && buf);
+  ASSERT(conn && buf && len);
   if (conn->Closed || conn->Error) return false;
   return spe_string_catb(conn->writeBuffer, buf, len);
 }

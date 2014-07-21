@@ -94,7 +94,7 @@ speOptCreate(const char* configFileName) {
   strcpy(sec, "global");
   while (1) {
     // get one line from file
-    if (spe_io_readuntil(io, "\n") <= 0) break;
+    if (SpeIoReaduntil(io, "\n") <= 0) break;
     spe_string_t* line = io->Data;
     spe_string_strim(line);
     // ignore empty and comment line

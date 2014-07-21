@@ -14,7 +14,7 @@
 #define SPE_IO_READUNTIL  3
 
 static int
-spe_io_read_common(spe_io_t* io) {
+ioReadCommon(spe_io_t* io) {
   int res;
   for (;;) {
     if (io->rtype == SPE_IO_READ) {
@@ -64,37 +64,31 @@ spe_io_readbytes
 ===================================================================================================
 */
 int 
-spe_io_readbytes(spe_io_t* io, unsigned len) {
+SpeIoReadbytes(spe_io_t* io, unsigned len) {
   ASSERT(io && len);
   if (io->closed || io->error || io->rtype != SPE_IO_READNONE) return -1;
   io->rtype  = SPE_IO_READBYTES;
   io->rbytes = len;
-  return spe_io_read_common(io);
+  return ioReadCommon(io);
 }
 
 /*
 ===================================================================================================
-spe_io_readline
+SpeIoReadline
 ===================================================================================================
 */
 int 
-spe_io_readuntil(spe_io_t* io, const char* delim) {  
+SpeIoReaduntil(spe_io_t* io, const char* delim) {  
   ASSERT(io && delim);
   if (io->closed || io->error || io->rtype != SPE_IO_READNONE) return -1;
   io->rtype  = SPE_IO_READUNTIL;
   io->delim  = delim;
-  return spe_io_read_common(io);
-}
-
-bool
-SpeIoWriteb(spe_io_t* io, char* buf, unsigned len) {
-  ASSERT(io && buf && len);
-  return true;
+  return ioReadCommon(io);
 }
 
 /*
 ===================================================================================================
-spe_io_create
+SpeIoCreate
 ===================================================================================================
 */
 spe_io_t*
@@ -102,11 +96,11 @@ SpeIoCreate(const char* fname) {
   ASSERT(fname);
   spe_io_t* io = calloc(1, sizeof(spe_io_t));
   if (!io) return NULL;
-  if ( (io->fd = open(fname, O_RDWR)) < 0) {
+  if ((io->fd = open(fname, O_RDWR)) < 0) {
     free(io);
     return NULL;
   }
-  io->Data          = spe_string_create(0);
+  io->Data        = spe_string_create(0);
   io->readBuffer  = spe_string_create(0);
   io->writeBuffer = spe_string_create(0);
   if (!io->Data || !io->readBuffer || !io->writeBuffer) {
@@ -118,7 +112,7 @@ SpeIoCreate(const char* fname) {
 
 /*
 ===================================================================================================
-spe_io_createfd
+SpeIoCreateFd
 ===================================================================================================
 */
 spe_io_t*
@@ -140,7 +134,7 @@ SpeIoCreateFd(int fd) {
 
 /*
 ===================================================================================================
-spe_io_destroy
+SpeIoDestroy
 ===================================================================================================
 */
 void 
