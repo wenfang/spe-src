@@ -10,9 +10,9 @@
 #include <errno.h>
 
 struct spe_epoll_s {
-  SpeTask_t*  _read_task;
-  SpeTask_t*  _write_task;
-  unsigned    _mask:2;             // mask set in epoll
+  SpeTask_t*  readTask;
+  SpeTask_t*  writeTask;
+  unsigned    mask:2;             // mask set in epoll
 };
 typedef struct spe_epoll_s spe_epoll_t;
 
@@ -27,7 +27,7 @@ epoll_change
 */
 static bool
 epoll_change(unsigned fd, spe_epoll_t* epoll_t, unsigned newmask) {
-  if (epoll_t->_mask == newmask) return true;
+  if (epoll_t->mask == newmask) return true;
   // set epoll_event 
   struct epoll_event ee;
   ee.data.u64 = 0;
@@ -37,7 +37,7 @@ epoll_change(unsigned fd, spe_epoll_t* epoll_t, unsigned newmask) {
   if (newmask & SPE_EPOLL_WRITE) ee.events |= EPOLLOUT;
   // set op type 
   int op = EPOLL_CTL_MOD; 
-  if (epoll_t->_mask == SPE_EPOLL_NONE) {
+  if (epoll_t->mask == SPE_EPOLL_NONE) {
     op = EPOLL_CTL_ADD;
   } else if (newmask == SPE_EPOLL_NONE) {
     op = EPOLL_CTL_DEL; 
@@ -46,7 +46,7 @@ epoll_change(unsigned fd, spe_epoll_t* epoll_t, unsigned newmask) {
     SPE_LOG_ERR("epoll_ctl error: fd %d, %s", fd, strerror(errno));
     return false;
   }
-  epoll_t->_mask = newmask;
+  epoll_t->mask = newmask;
   return true;
 }
 
@@ -60,9 +60,9 @@ spe_epoll_enable(unsigned fd, unsigned mask, SpeTask_t* task) {
   ASSERT(task);
   if (fd >= MAX_FD) return false;
   spe_epoll_t* epoll_t = &all_epoll[fd];
-  if (mask & SPE_EPOLL_READ) epoll_t->_read_task = task;
-  if (mask & SPE_EPOLL_WRITE) epoll_t->_write_task = task;
-  return epoll_change(fd, epoll_t, epoll_t->_mask | mask);
+  if (mask & SPE_EPOLL_READ) epoll_t->readTask = task;
+  if (mask & SPE_EPOLL_WRITE) epoll_t->writeTask = task;
+  return epoll_change(fd, epoll_t, epoll_t->mask | mask);
 }
 
 /*
@@ -74,9 +74,9 @@ bool
 spe_epoll_disable(unsigned fd, unsigned mask) {
   if (fd >= MAX_FD) return false;
   spe_epoll_t* epoll_t = &all_epoll[fd];
-  if (mask & SPE_EPOLL_READ) epoll_t->_read_task = NULL;
-  if (mask & SPE_EPOLL_WRITE) epoll_t->_write_task = NULL;
-  return epoll_change(fd, epoll_t, epoll_t->_mask & (~mask));
+  if (mask & SPE_EPOLL_READ) epoll_t->readTask = NULL;
+  if (mask & SPE_EPOLL_WRITE) epoll_t->writeTask = NULL;
+  return epoll_change(fd, epoll_t, epoll_t->mask & (~mask));
 }
 
 static struct epoll_event epEvents[MAX_FD];
@@ -103,11 +103,11 @@ spe_epoll_process(int timeout) {
       continue;
     }
     spe_epoll_t* epoll_t = &all_epoll[e->data.fd];
-    if ((e->events & EPOLLIN) && (epoll_t->_mask & SPE_EPOLL_READ)) {
-      SpeTaskEnqueue(epoll_t->_read_task);
+    if ((e->events & EPOLLIN) && (epoll_t->mask & SPE_EPOLL_READ)) {
+      SpeTaskEnqueue(epoll_t->readTask);
     }
-    if ((e->events & EPOLLOUT) && (epoll_t->_mask & SPE_EPOLL_WRITE)) {
-      SpeTaskEnqueue(epoll_t->_write_task);
+    if ((e->events & EPOLLOUT) && (epoll_t->mask & SPE_EPOLL_WRITE)) {
+      SpeTaskEnqueue(epoll_t->writeTask);
     }
   }
 }

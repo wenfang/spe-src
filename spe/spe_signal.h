@@ -1,15 +1,15 @@
 #ifndef __SPE_SIGNAL_H
 #define __SPE_SIGNAL_H
 
-typedef void spe_signal_Handler(int sig);
+typedef void SpeSignal_Handler(int sig);
 
 extern void 
-spe_signal_init();
+speSignalInit();
 
 extern void 
-spe_signal_register(int sig, spe_signal_Handler handler);
+SpeSignalRegister(int sig, SpeSignal_Handler handler);
 
 extern void 
-spe_signal_process();
+speSignalProcess();
 
 #endif

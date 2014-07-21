@@ -55,6 +55,7 @@ driver_machine(spe_redis_t* sr) {
       }
       sr->status = SPE_REDIS_SEND;
       spe_conn_flush(sr->conn);
+      break;
     case SPE_REDIS_SEND:
       sr->status = SPE_REDIS_RECV_LINE;
       spe_conn_readuntil(sr->conn, "\r\n");

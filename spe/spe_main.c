@@ -42,9 +42,9 @@ main(int argc, char* argv[]) {
     return 1;
   }
   // init signal
-  spe_signal_init();
-  spe_signal_register(SIGPIPE, SIG_IGN);
-  spe_signal_register(SIGHUP, SIG_IGN);
+  speSignalInit();
+  SpeSignalRegister(SIGPIPE, SIG_IGN);
+  SpeSignalRegister(SIGHUP, SIG_IGN);
   // call mod_init
   if (!mod_init()) {
     fprintf(stderr, "[ERROR] mod_init...\n");
@@ -59,7 +59,7 @@ main(int argc, char* argv[]) {
     spe_epoll_process(timeout);
     speServerAfterLoop();
     speTaskProcess();
-    spe_signal_process();
+    speSignalProcess();
   }
   if (!mod_exit()) {
     fprintf(stderr, "[ERROR] mod_exit...\n");

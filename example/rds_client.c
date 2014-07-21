@@ -3,32 +3,18 @@
 
 static void
 on_get(void* arg) {
+  GStop = true;
   spe_redis_t* sr = arg;
   if (sr->error) {
     fprintf(stderr, "spe_redis_t error\n");
-    g_stop = true;
+    spe_redis_destroy(sr);
     return;
   }
   for (int i=0; i<sr->recv_buffer->len; i++) {
     printf("%s\n", sr->recv_buffer->data[i]->data);
   }
   spe_redis_destroy(sr);
-  g_stop = true;
 }
-
-/*
-static void
-on_set(void* arg) {
-  spe_redis_t* sr = arg;
-  if (sr->error) {
-    fprintf(stderr, "spe_redis_t error\n");
-    g_stop = true;
-    return;
-  }
-  fprintf(stderr, "set ok\n");
-  g_stop = true;
-}
-*/
 
 bool
 mod_init(void) {

@@ -1,7 +1,6 @@
 #ifndef __SPE_MAIN_H
 #define __SPE_MAIN_H
 
-#include "spe_server.h"
 #include <stdbool.h>
 
 extern bool GStop;

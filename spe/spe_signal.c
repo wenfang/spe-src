@@ -6,7 +6,7 @@
 
 struct spe_signal_s {
   unsigned            count;
-  spe_signal_Handler* handler;
+  SpeSignal_Handler*  handler;
 };
 typedef struct spe_signal_s spe_signal_t;
 
@@ -17,11 +17,11 @@ static sigset_t     spe_blocked_sig;
 
 /*
 ===================================================================================================
-spe_signal_init
+speSignalInit
 ===================================================================================================
 */
 void 
-spe_signal_init() {
+speSignalInit() {
   spe_signal_queue_len = 0;
   memset(spe_signal_queue, 0, sizeof(spe_signal_queue));
   memset(spe_signal_state, 0, sizeof(spe_signal_state));
@@ -51,11 +51,11 @@ signal_handler(int sig) {
 
 /*
 ===================================================================================================
-spe_signal_register
+SpeSignalRegister
 ===================================================================================================
 */
 void 
-spe_signal_register(int sig, spe_signal_Handler handler) {
+SpeSignalRegister(int sig, SpeSignal_Handler handler) {
 	if (sig < 0 || sig > MAX_SIGNAL) return;
 	spe_signal_state[sig].count = 0;
  	if (handler == NULL) handler = SIG_IGN; 
@@ -71,11 +71,11 @@ spe_signal_register(int sig, spe_signal_Handler handler) {
 
 /*
 ===================================================================================================
-spe_signal_process
+speSignalProcess
 ===================================================================================================
 */
 void 
-spe_signal_process() {
+speSignalProcess() {
 	sigset_t old_sig;
 	sigprocmask(SIG_SETMASK, &spe_blocked_sig, &old_sig);
  	// check signal queue	
