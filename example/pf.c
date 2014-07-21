@@ -63,7 +63,7 @@ mod_init(void) {
   int port = SpeOptInt("pf_base", "port", 7879);
   int procs = SpeOptInt("pf_base", "procs", 4);
   SpeServerInit("127.0.0.1", port, run);
-  spe_main_procs(procs);
+  SpeProcs(procs);
   return true;
 }
 

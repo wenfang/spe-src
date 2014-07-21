@@ -88,14 +88,14 @@ speOptCreate(const char* configFileName) {
   char key[KEY_MAXLEN];
   char val[VAL_MAXLEN];
 
-  spe_io_t* io = spe_io_create(configFileName);
+  spe_io_t* io = SpeIoCreate(configFileName);
   if (!io) return false;
   // set default section
   strcpy(sec, "global");
   while (1) {
     // get one line from file
     if (spe_io_readuntil(io, "\n") <= 0) break;
-    spe_string_t* line = io->data;
+    spe_string_t* line = io->Data;
     spe_string_strim(line);
     // ignore empty and comment line
     if (line->len == 0 || line->data[0] == '#') continue;
@@ -106,7 +106,7 @@ speOptCreate(const char* configFileName) {
       spe_string_strim(line);
       // section can't be null
       if (line->len == 0) {
-        spe_io_destroy(io);
+        SpeIoDestroy(io);
         return false;
       }
       strncpy(sec, line->data, SEC_MAXLEN);
@@ -117,7 +117,7 @@ speOptCreate(const char* configFileName) {
     spe_slist_t* slist = spe_string_split(line, "=");
     if (slist->len != 2) {
       spe_slist_destroy(slist);
-      spe_io_destroy(io);
+      SpeIoDestroy(io);
       return false;
     }
     spe_string_t* key_str = slist->data[0];
@@ -132,7 +132,7 @@ speOptCreate(const char* configFileName) {
     // set option value
     speOptSet(sec, key, val);
   }
-  spe_io_destroy(io);
+  SpeIoDestroy(io);
   return true;
 }
 

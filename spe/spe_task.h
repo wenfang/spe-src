@@ -11,7 +11,7 @@ struct SpeTask_s {
   unsigned long     expire;
   struct rb_node    timerNode;
   struct list_head  taskNode;
-  unsigned          status;
+  unsigned          status:7;
   unsigned          Timeout:1;
 };
 typedef struct SpeTask_s SpeTask_t;
