@@ -12,10 +12,10 @@
 #define VAL_MAXLEN  128
 
 struct speOpt_s {
-	char                sec[SEC_MAXLEN];
- 	char                key[KEY_MAXLEN];
-	char                val[VAL_MAXLEN];      // string value
-	struct list_head    node;
+	char              sec[SEC_MAXLEN];
+ 	char              key[KEY_MAXLEN];
+	char              val[VAL_MAXLEN];      // string value
+	struct list_head  node;
 };
 typedef struct speOpt_s speOpt_t;
 

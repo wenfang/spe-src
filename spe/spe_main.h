@@ -4,7 +4,7 @@
 #include "spe_server.h"
 #include <stdbool.h>
 
-extern bool g_stop;
+extern bool GStop;
 
 extern bool
 spe_main_procs(int procs);

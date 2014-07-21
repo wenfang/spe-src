@@ -9,7 +9,7 @@
 #include <signal.h>
 #include <unistd.h>
 
-bool g_stop;
+bool GStop;
 
 bool
 spe_main_procs(int procs) {
@@ -22,12 +22,12 @@ spe_main_procs(int procs) {
 
 int 
 main(int argc, char* argv[]) {
-  if (argc != 2) {
-    printf("Usage: %s <conf_file>\n", argv[0]);
+  if (argc > 2) {
+    printf("Usage: %s [conf_file]\n", argv[0]);
     return 1;
   }
   // parse config file
-  if (!speOptCreate(argv[1])) {
+  if ((argc==2) && !speOptCreate(argv[1])) {
     fprintf(stderr, "[ERROR] Parse File %s Error ...\n", argv[1]);
     return 1;
   }
@@ -47,7 +47,7 @@ main(int argc, char* argv[]) {
   }
   speServerStart();
   // enter loop
-  while (!g_stop) {
+  while (!GStop) {
     unsigned timeout = 300;
     if (gTaskNum) timeout = 0;
     speServerBeforeLoop();

@@ -12,3 +12,5 @@ clean:
 	rm -rf $(OBJS)
 	rm -rf $(BUILD)/libspe.a
 	rm -rf gmon.out
+
+.PHONY: all clean
