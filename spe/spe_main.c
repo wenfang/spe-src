@@ -11,8 +11,13 @@
 
 bool GStop;
 
+/*
+===================================================================================================
+SpeProcs
+===================================================================================================
+*/
 bool
-spe_main_procs(int procs) {
+SpeProcs(int procs) {
   if (procs <= 1) return false;
   if (!speServerUseAcceptMutex()) return false;
   spe_spawn(procs);

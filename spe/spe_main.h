@@ -7,7 +7,7 @@
 extern bool GStop;
 
 extern bool
-spe_main_procs(int procs);
+SpeProcs(int procs);
 
 /*******************user define the following functions *******************/
 extern bool

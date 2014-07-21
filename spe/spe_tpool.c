@@ -7,8 +7,6 @@
 
 #define MAX_THREAD  64
 
-struct spe_tpool_s;
-
 struct spe_thread_s {
   pthread_t           _id;
   pthread_mutex_t     _lock;
