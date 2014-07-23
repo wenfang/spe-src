@@ -11,6 +11,7 @@
 #define SPE_TASK_RUN    4
 
 unsigned gTaskNum;
+unsigned gThreadTaskNum;
 
 static LIST_HEAD(task_head);
 static struct rb_root   timer_head;
@@ -55,7 +56,7 @@ SpeTaskEnqueue(SpeTask_t* task) {
   task->status = SPE_TASK_QUEUE;
   gTaskNum++;
   pthread_mutex_unlock(&task_lock);
-  speEpollWakeup();
+  //speEpollWakeup();
   return true;
 }
 

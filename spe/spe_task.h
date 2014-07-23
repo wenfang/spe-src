@@ -33,6 +33,12 @@ SpeTaskEnqueueTimer(SpeTask_t* task, unsigned long ms);
 extern bool
 SpeTaskDequeueTimer(SpeTask_t* task);
 
+extern bool
+SpeThreadTaskEnqueue(SpeTask_t* task);
+
+extern bool
+SpeThreadTaskDequeue(SpeTask_t* task);
+
 extern void
 speTaskProcess();
 
