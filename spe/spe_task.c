@@ -55,7 +55,7 @@ SpeTaskEnqueue(SpeTask_t* task) {
   task->status = SPE_TASK_QUEUE;
   gTaskNum++;
   pthread_mutex_unlock(&task_lock);
-  spe_epoll_wakeup();
+  speEpollWakeup();
   return true;
 }
 

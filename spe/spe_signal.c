@@ -76,6 +76,7 @@ speSignalProcess
 */
 void 
 speSignalProcess() {
+  if (spe_signal_queue_len == 0) return;
 	sigset_t old_sig;
 	sigprocmask(SIG_SETMASK, &spe_blocked_sig, &old_sig);
  	// check signal queue	

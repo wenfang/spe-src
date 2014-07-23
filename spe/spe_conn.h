@@ -9,25 +9,25 @@
 #include <string.h>
 
 struct spe_conn_s {
-  SpeTask_t       ReadCallback;
-  SpeTask_t       WriteCallback;
-  int             fd;
-  SpeTask_t       readTask;
-  SpeTask_t       writeTask;
-  unsigned        readExpireTime;
-  unsigned        writeExpireTime;
-  spe_string_t*   readBuffer;
-  spe_string_t*   writeBuffer;
-  spe_string_t*   Buffer;
-  char*           delim;
-  unsigned        rbytes;
-  unsigned        readType:2;
-  unsigned        writeType:1;
-  unsigned        ConnectTimeout:1;
-  unsigned        ReadTimeout:1;
-  unsigned        WriteTimeout:1;
-  unsigned        Closed:1;
-  unsigned        Error:1;
+  SpeTask_t     ReadCallback;
+  SpeTask_t     WriteCallback;
+  int           fd;
+  SpeTask_t     readTask;
+  SpeTask_t     writeTask;
+  unsigned      readExpireTime;
+  unsigned      writeExpireTime;
+  spe_string_t* readBuffer;
+  spe_string_t* writeBuffer;
+  spe_string_t* Buffer;
+  char*         delim;
+  unsigned      rbytes;
+  unsigned      readType:2;
+  unsigned      writeType:1;
+  unsigned      ConnectTimeout:1;
+  unsigned      ReadTimeout:1;
+  unsigned      WriteTimeout:1;
+  unsigned      Closed:1;
+  unsigned      Error:1;
 };
 typedef struct spe_conn_s spe_conn_t;
 

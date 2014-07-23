@@ -21,7 +21,7 @@ SpeProcs(int procs) {
   if (procs <= 1) return false;
   if (!speServerUseAcceptMutex()) return false;
   spe_spawn(procs);
-  spe_epoll_fork();
+  speEpollFork();
   return true;
 }
 
@@ -56,7 +56,7 @@ main(int argc, char* argv[]) {
     unsigned timeout = 300;
     if (gTaskNum) timeout = 0;
     speServerBeforeLoop();
-    spe_epoll_process(timeout);
+    speEpollProcess(timeout);
     speServerAfterLoop();
     speTaskProcess();
     speSignalProcess();

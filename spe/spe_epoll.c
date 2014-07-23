@@ -52,11 +52,11 @@ epoll_change(unsigned fd, spe_epoll_t* epoll_t, unsigned newmask) {
 
 /*
 ===================================================================================================
-spe_epoll_enable
+speEpollEnable
 ===================================================================================================
 */
 bool
-spe_epoll_enable(unsigned fd, unsigned mask, SpeTask_t* task) {
+speEpollEnable(unsigned fd, unsigned mask, SpeTask_t* task) {
   ASSERT(task);
   if (fd >= MAX_FD) return false;
   spe_epoll_t* epoll_t = &all_epoll[fd];
@@ -67,11 +67,11 @@ spe_epoll_enable(unsigned fd, unsigned mask, SpeTask_t* task) {
 
 /*
 ===================================================================================================
-spe_epoll_disable
+speEpollDisable
 ===================================================================================================
 */
 bool
-spe_epoll_disable(unsigned fd, unsigned mask) {
+speEpollDisable(unsigned fd, unsigned mask) {
   if (fd >= MAX_FD) return false;
   spe_epoll_t* epoll_t = &all_epoll[fd];
   if (mask & SPE_EPOLL_READ) epoll_t->readTask = NULL;
@@ -82,11 +82,11 @@ spe_epoll_disable(unsigned fd, unsigned mask) {
 static struct epoll_event epEvents[MAX_FD];
 /*
 ===================================================================================================
-spe_epoll_process
+speEpollProcess
 ===================================================================================================
 */
 void
-spe_epoll_process(int timeout) {
+speEpollProcess(int timeout) {
   int events_n = epoll_wait(epfd, epEvents, MAX_FD, timeout);
   if (unlikely(events_n < 0)) {
     if (errno == EINTR) return;
@@ -114,13 +114,13 @@ spe_epoll_process(int timeout) {
 
 /*
 ===================================================================================================
-spe_epoll_wakeup
+speEpollWakeup
 ===================================================================================================
 */
 void
-spe_epoll_wakeup(void) {
+speEpollWakeup(void) {
   uint64_t u = 1;
-  if (write(epoll_eventfd, &u, sizeof(uint64_t)) <= 0) SPE_LOG_ERR("spe_epoll_wakeup error");
+  if (write(epoll_eventfd, &u, sizeof(uint64_t)) <= 0) SPE_LOG_ERR("speEpollWakeup error");
 }
 
 /*
@@ -144,11 +144,11 @@ spe_epoll_init(void) {
 
 /*
 ===================================================================================================
-spe_epoll_fork
+speEpollFork
 ===================================================================================================
 */
 void
-spe_epoll_fork(void) {
+speEpollFork(void) {
   close(epoll_eventfd);
   close(epfd);
   spe_epoll_init();
