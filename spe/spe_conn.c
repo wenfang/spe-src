@@ -39,8 +39,13 @@ end_out:
   SPE_HANDLER_CALL(conn->ReadCallback.Handler);
 }
 
+/*
+===================================================================================================
+connectStart
+===================================================================================================
+*/
 static void
-connect_start(void* arg) {
+connectStart(void* arg) {
   spe_conn_t* conn = arg;
   conn->readTask.Handler = SPE_HANDLER1(connect_generic, conn);
   spe_epoll_enable(conn->fd, SPE_EPOLL_READ|SPE_EPOLL_WRITE, &conn->readTask);
@@ -69,7 +74,7 @@ spe_conn_connect(spe_conn_t* conn, const char* addr, const char* port) {
   if (connect(conn->fd, servinfo->ai_addr, servinfo->ai_addrlen) == -1) {
     if (errno == EINPROGRESS) {
       // (async):
-      conn->readTask.Handler  = SPE_HANDLER1(connect_start, conn);
+      conn->readTask.Handler  = SPE_HANDLER1(connectStart, conn);
       conn->readType          = SPE_CONN_CONNECT;
       conn->writeType         = SPE_CONN_CONNECT;
       conn->ConnectTimeout    = 0;
@@ -116,16 +121,16 @@ read_generic(void* arg) {
   }
   // check read type
   if (conn->readType == SPE_CONN_READUNTIL) {
-    int pos = spe_string_search(conn->readBuffer, conn->_delim);
+    int pos = spe_string_search(conn->readBuffer, conn->delim);
     if (pos != -1) {
       spe_string_copyb(conn->Buffer, conn->readBuffer->data, pos);
-      spe_string_consume(conn->readBuffer, pos + strlen(conn->_delim));
+      spe_string_consume(conn->readBuffer, pos + strlen(conn->delim));
       goto end_out;
     }
   } else if (conn->readType == SPE_CONN_READBYTES) {
-    if (conn->_rbytes <= conn->readBuffer->len) {
-      spe_string_copyb(conn->Buffer, conn->readBuffer->data, conn->_rbytes);
-      spe_string_consume(conn->readBuffer, conn->_rbytes);
+    if (conn->rbytes <= conn->readBuffer->len) {
+      spe_string_copyb(conn->Buffer, conn->readBuffer->data, conn->rbytes);
+      spe_string_consume(conn->readBuffer, conn->rbytes);
       goto end_out;
     }
   } else if (conn->readType == SPE_CONN_READ) {
@@ -173,8 +178,8 @@ spe_conn_readuntil(spe_conn_t* conn, char* delim) {
   }
   // (async):
   conn->readTask.Handler  = SPE_HANDLER1(read_start, conn);
-  conn->ReadTimeout        = 0;
-  conn->_delim              = delim;
+  conn->ReadTimeout       = 0;
+  conn->delim             = delim;
   conn->readType          = SPE_CONN_READUNTIL;
   SpeTaskEnqueue(&conn->readTask);
   return true;
@@ -198,8 +203,8 @@ spe_conn_readbytes(spe_conn_t* conn, unsigned len) {
   }
   // (async):
   conn->readTask.Handler  = SPE_HANDLER1(read_start, conn);
-  conn->ReadTimeout        = 0;
-  conn->_rbytes             = len;
+  conn->ReadTimeout       = 0;
+  conn->rbytes            = len;
   conn->readType          = SPE_CONN_READBYTES;
   SpeTaskEnqueue(&conn->readTask);
   return true;
@@ -299,8 +304,13 @@ spe_conn_set_timeout(spe_conn_t* conn, unsigned readExpireTime, unsigned writeEx
   return true;
 }
 
+/*
+===================================================================================================
+connInit
+===================================================================================================
+*/
 static bool
-conn_init(spe_conn_t* conn, unsigned fd) {
+connInit(spe_conn_t* conn, unsigned fd) {
   conn->fd = fd;
   SpeTaskInit(&conn->readTask);
   SpeTaskInit(&conn->writeTask);
@@ -315,7 +325,6 @@ conn_init(spe_conn_t* conn, unsigned fd) {
     spe_string_destroy(conn->Buffer);
     return false;
   }
-  conn->_init = 1;
   return true;
 }
 
@@ -329,12 +338,13 @@ spe_conn_create(unsigned fd) {
   if (unlikely(fd >= MAX_FD)) return NULL;
   spe_sock_set_block(fd, 0);
   spe_conn_t* conn = &all_conn[fd];
-  if (!conn->_init && !conn_init(conn, fd)) {
-    SPE_LOG_ERR("conn_init error");
+  if (conn->fd == 0 && !connInit(conn, fd)) {
+    SPE_LOG_ERR("connInit error");
     return NULL;
   }
   spe_string_clean(conn->readBuffer);
   spe_string_clean(conn->writeBuffer);
+  spe_string_clean(conn->Buffer);
   // init conn status
   conn->readExpireTime  = 0;
   conn->writeExpireTime = 0;

@@ -19,9 +19,8 @@ struct spe_conn_s {
   spe_string_t*   readBuffer;
   spe_string_t*   writeBuffer;
   spe_string_t*   Buffer;
-  char*           _delim;
-  unsigned        _rbytes;
-  unsigned        _init:1;
+  char*           delim;
+  unsigned        rbytes;
   unsigned        readType:2;
   unsigned        writeType:1;
   unsigned        ConnectTimeout:1;
