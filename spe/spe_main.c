@@ -54,7 +54,7 @@ main(int argc, char* argv[]) {
   // enter loop
   while (!GStop) {
     unsigned timeout = 300;
-    if (gTaskNum) timeout = 0;
+    if (gTaskNum || gThreadTaskNum) timeout = 0;
     speServerBeforeLoop();
     speEpollProcess(timeout);
     speServerAfterLoop();

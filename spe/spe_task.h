@@ -16,7 +16,8 @@ struct SpeTask_s {
 };
 typedef struct SpeTask_s SpeTask_t;
 
-extern unsigned gTaskNum;
+extern int gTaskNum;
+extern int gThreadTaskNum;
 
 extern void
 SpeTaskInit(SpeTask_t* task);

@@ -8,14 +8,15 @@
 #define SPE_TASK_FREE   0
 #define SPE_TASK_TIMER  1
 #define SPE_TASK_QUEUE  2
-#define SPE_TASK_RUN    4
+#define SPE_TASK_RUN    3
 
-unsigned gTaskNum;
-unsigned gThreadTaskNum;
+int gTaskNum;
+int gThreadTaskNum;
 
 static LIST_HEAD(task_head);
+static LIST_HEAD(threadTask_head);
 static struct rb_root   timer_head;
-static pthread_mutex_t  task_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t  threadTask_lock = PTHREAD_MUTEX_INITIALIZER;
 
 /*
 ===================================================================================================
@@ -42,12 +43,7 @@ bool
 SpeTaskEnqueue(SpeTask_t* task) {
   ASSERT(task);
   // double check
-  if (task->status == SPE_TASK_QUEUE || task->status == SPE_TASK_RUN) return false;
-  pthread_mutex_lock(&task_lock);
-  if (task->status == SPE_TASK_QUEUE || task->status == SPE_TASK_RUN) {
-    pthread_mutex_lock(&task_lock);
-    return false;
-  }
+  if (task->status == SPE_TASK_QUEUE) return false;
   if (task->status == SPE_TASK_TIMER) {
     rb_erase(&task->timerNode, &timer_head);
     rb_init_node(&task->timerNode);
@@ -55,8 +51,6 @@ SpeTaskEnqueue(SpeTask_t* task) {
   list_add_tail(&task->taskNode, &task_head);
   task->status = SPE_TASK_QUEUE;
   gTaskNum++;
-  pthread_mutex_unlock(&task_lock);
-  //speEpollWakeup();
   return true;
 }
 
@@ -70,15 +64,9 @@ SpeTaskDequeue(SpeTask_t* task) {
   ASSERT(task);
   // double check
   if (task->status != SPE_TASK_QUEUE) return false;
-  pthread_mutex_lock(&task_lock);
-  if (task->status != SPE_TASK_QUEUE) {
-    pthread_mutex_unlock(&task_lock);
-    return false;
-  }
   list_del_init(&task->taskNode);
-  task->status = SPE_TASK_FREE;
   gTaskNum--;
-  pthread_mutex_unlock(&task_lock);
+  task->status = SPE_TASK_FREE;
   return true;
 }
 
@@ -90,18 +78,12 @@ SpeTaskEnqueue_timer
 bool
 SpeTaskEnqueueTimer(SpeTask_t* task, unsigned long ms) {
   ASSERT(task);
-  if (task->status == SPE_TASK_QUEUE || task->status == SPE_TASK_RUN) return false;
-  // insert into timer list
-  pthread_mutex_lock(&task_lock);
-  if (task->status == SPE_TASK_QUEUE || task->status == SPE_TASK_RUN) {
-    pthread_mutex_unlock(&task_lock);
-    return false;
-  }
+  if (task->status == SPE_TASK_QUEUE) return false;
   if (task->status == SPE_TASK_TIMER) {
     rb_erase(&task->timerNode, &timer_head);
     rb_init_node(&task->timerNode);
   }
-  task->expire = spe_current_time() + ms;
+  task->expire  = spe_current_time() + ms;
   task->Timeout = 0;
   struct rb_node **new = &timer_head.rb_node, *parent = NULL;
   while (*new) {
@@ -116,7 +98,6 @@ SpeTaskEnqueueTimer(SpeTask_t* task, unsigned long ms) {
   rb_link_node(&task->timerNode, parent, new);
   rb_insert_color(&task->timerNode, &timer_head);
   task->status = SPE_TASK_TIMER;
-  pthread_mutex_unlock(&task_lock);
   return true;
 }
 
@@ -129,15 +110,52 @@ bool
 SpeTaskDequeueTimer(SpeTask_t* task) {
   ASSERT(task);
   if (task->status != SPE_TASK_TIMER) return false;
-  pthread_mutex_lock(&task_lock);
-  if (task->status != SPE_TASK_TIMER) {
-    pthread_mutex_lock(&task_lock);
+  rb_erase(&task->timerNode, &timer_head);
+  rb_init_node(&task->timerNode);
+  task->status = SPE_TASK_FREE;
+  return true;
+}
+
+/*
+===================================================================================================
+SpeThreadTaskEnqueue
+===================================================================================================
+*/
+bool
+SpeThreadTaskEnqueue(SpeTask_t* task) {
+  ASSERT(task);
+  if (task->status != SPE_TASK_FREE) return false;
+  pthread_mutex_lock(&threadTask_lock);
+  if (task->status != SPE_TASK_FREE) {
+    pthread_mutex_unlock(&threadTask_lock);
     return false;
   }
-  rb_erase(&task->timerNode, &timer_head);
+  list_add_tail(&task->taskNode, &task_head);
+  task->status = SPE_TASK_QUEUE;
+  gThreadTaskNum++;
+  pthread_mutex_unlock(&threadTask_lock);
+  speEpollWakeup();
+  return true;
+}
+
+/*
+===================================================================================================
+SpeThreadTaskDequeue
+===================================================================================================
+*/
+bool
+SpeThreadTaskDequeue(SpeTask_t* task) {
+  ASSERT(task);
+  if (task->status != SPE_TASK_QUEUE) return false;
+  pthread_mutex_lock(&threadTask_lock);
+  if (task->status == SPE_TASK_QUEUE) {
+    pthread_mutex_unlock(&threadTask_lock);
+    return false;
+  }
+  list_del_init(&task->taskNode);
   task->status = SPE_TASK_FREE;
-  rb_init_node(&task->timerNode);
-  pthread_mutex_unlock(&task_lock);
+  gThreadTaskNum--;
+  pthread_mutex_unlock(&threadTask_lock);
   return true;
 }
 
@@ -152,7 +170,6 @@ speTaskProcess() {
   if (!RB_EMPTY_ROOT(&timer_head)) {
     unsigned long curr_time = spe_current_time();
     // check timer list
-    pthread_mutex_lock(&task_lock);
     struct rb_node* first = rb_first(&timer_head);
     while (first) {
       SpeTask_t* task = rb_entry(first, SpeTask_t, timerNode);
@@ -163,30 +180,41 @@ speTaskProcess() {
       task->Timeout = 1;
       // add to task queue
       list_add_tail(&task->taskNode, &task_head);
-      task->status  = SPE_TASK_QUEUE;
+      task->status = SPE_TASK_QUEUE;
       gTaskNum++;
       first = rb_first(&timer_head);
     } 
-    pthread_mutex_unlock(&task_lock);
   }
   // run task
   while (gTaskNum) {
-    pthread_mutex_lock(&task_lock);
     SpeTask_t* task = list_first_entry(&task_head, SpeTask_t, taskNode);
-    if (!task) {
-      pthread_mutex_unlock(&task_lock);
-      break;
-    }
-    list_del_init(&task->taskNode);
+    if (!task) break;
     ASSERT(task->status == SPE_TASK_QUEUE);
-    task->status = SPE_TASK_RUN;
+    list_del_init(&task->taskNode);
     gTaskNum--;
-    pthread_mutex_unlock(&task_lock);
+    ASSERT(gTaskNum >= 0);
+    task->status = SPE_TASK_RUN;
     SPE_HANDLER_CALL(task->Handler);
     // set task stauts to free
-    pthread_mutex_lock(&task_lock);
     task->status = SPE_TASK_FREE;
-    pthread_mutex_unlock(&task_lock);
+  }
+  // run thread task
+  while (gThreadTaskNum) {
+    pthread_mutex_lock(&threadTask_lock);
+    SpeTask_t* task = list_first_entry(&threadTask_head, SpeTask_t, taskNode);
+    if (!task) {
+      pthread_mutex_unlock(&threadTask_lock);
+      break;
+    }
+    ASSERT(task->status == SPE_TASK_QUEUE);
+    list_del_init(&task->taskNode);
+    gThreadTaskNum--;
+    task->status = SPE_TASK_RUN;
+    pthread_mutex_unlock(&threadTask_lock);
+    SPE_HANDLER_CALL(task->Handler);
+    pthread_mutex_lock(&threadTask_lock);
+    task->status = SPE_TASK_FREE;
+    pthread_mutex_unlock(&threadTask_lock);
   }
 }
 
