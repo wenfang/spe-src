@@ -5,9 +5,6 @@
 #include "spe_handler.h"
 #include "spe_string.h"
 
-struct SpeRedisPool_s;
-typedef struct SpeRedisPool_s SpeRedisPool_t;
-
 struct SpeRedis_s {
   spe_conn_t*   conn;
   const char*   host;
@@ -28,6 +25,7 @@ struct SpeRedisPool_s {
   unsigned    len;
   SpeRedis_t* poolData[0];
 };
+typedef struct SpeRedisPool_s SpeRedisPool_t;
 
 extern void
 SpeRedisDo(SpeRedis_t* sr, spe_handler_t handler, int nargs, ...);
