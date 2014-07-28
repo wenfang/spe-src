@@ -11,13 +11,13 @@
 #define SPE_CONB_INNER    -3
 
 struct spe_conb_s {
-  spe_string_t* _read_buffer; // read read buffer 
-  const char*   _delim;       // the delim when readtype is READUNTIL 
-  unsigned      _rbytes;      // read data size when readtype is READBYTES 
-  unsigned      _fd;          // fd to control
-  unsigned      _rtype:2;     // read type
-  unsigned      _closed:1;    // peer closed
-  unsigned      _error:1;     // peer error  
+  spe_string_t* readBuffer; // read read buffer 
+  const char*   delim;       // the delim when readtype is READUNTIL 
+  unsigned      rbytes;      // read data size when readtype is READBYTES 
+  unsigned      fd;          // fd to control
+  unsigned      rtype:2;     // read type
+  unsigned      closed:1;    // peer closed
+  unsigned      error:1;     // peer error  
 };  
 typedef struct spe_conb_s spe_conb_t;
 
@@ -36,14 +36,14 @@ spe_conb_writeb(spe_conb_t* conn, char* buf, unsigned len);
 static inline int    
 spe_conb_write(spe_conb_t* conn, spe_string_t* buf) {
   ASSERT(conn && buf);
-  if (!buf->len || conn->_closed || conn->_error) return -1;
+  if (!buf->len || conn->closed || conn->error) return -1;
   return spe_conb_writeb(conn, buf->data, buf->len);
 }
 
 static inline int    
 spe_conb_writes(spe_conb_t* conn, char* buf) {
   ASSERT(conn && buf);
-  if (conn->_closed || conn->_error) return -1;
+  if (conn->closed || conn->error) return -1;
   return spe_conb_writeb(conn, buf, strlen(buf));
 }
 

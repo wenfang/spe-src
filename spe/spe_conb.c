@@ -31,33 +31,33 @@ spe_conb_read_common(spe_conb_t* conn, spe_string_t* data) {
   // read data first in a loop
   for (;;) {
     // buffer has enough data, copy and return
-    if (conn->_rtype == SPE_CONB_READBYTES) {
-      if (conn->_rbytes <= conn->_read_buffer->len) { 
-        spe_string_copyb(data, conn->_read_buffer->data, conn->_rbytes);
-        spe_string_consume(conn->_read_buffer, conn->_rbytes);
-        conn->_rtype = SPE_CONB_READNONE;
+    if (conn->rtype == SPE_CONB_READBYTES) {
+      if (conn->rbytes <= conn->readBuffer->len) { 
+        spe_string_copyb(data, conn->readBuffer->data, conn->rbytes);
+        spe_string_consume(conn->readBuffer, conn->rbytes);
+        conn->rtype = SPE_CONB_READNONE;
         return data->len;
       }
-    } else if (conn->_rtype == SPE_CONB_READUNTIL) {
-      int pos = spe_string_search(conn->_read_buffer, conn->_delim);
+    } else if (conn->rtype == SPE_CONB_READUNTIL) {
+      int pos = spe_string_search(conn->readBuffer, conn->delim);
       if (pos != -1) {
-        spe_string_copyb(data, conn->_read_buffer->data, pos);
-        spe_string_consume(conn->_read_buffer, pos + strlen(conn->_delim));
-        conn->_rtype = SPE_CONB_READNONE;
+        spe_string_copyb(data, conn->readBuffer->data, pos);
+        spe_string_consume(conn->readBuffer, pos + strlen(conn->delim));
+        conn->rtype = SPE_CONB_READNONE;
         return data->len;
       }
-    } else if (conn->_rtype == SPE_CONB_READ) {
-      if (conn->_read_buffer->len > 0) {
-        spe_string_copy(data, conn->_read_buffer);
-        spe_string_clean(conn->_read_buffer);
-        conn->_rtype = SPE_CONB_READNONE;
+    } else if (conn->rtype == SPE_CONB_READ) {
+      if (conn->readBuffer->len > 0) {
+        spe_string_copy(data, conn->readBuffer);
+        spe_string_clean(conn->readBuffer);
+        conn->rtype = SPE_CONB_READNONE;
         return data->len;
       }
     }
     // we must read data  
-    ret = read(conn->_fd, buf, BUF_SIZE);
+    ret = read(conn->fd, buf, BUF_SIZE);
     if (ret > 0) {
-      spe_string_catb(conn->_read_buffer, buf, ret);
+      spe_string_catb(conn->readBuffer, buf, ret);
       continue;
     }
     if (ret == SPE_CONB_ERROR) {           
@@ -68,13 +68,13 @@ spe_conb_read_common(spe_conb_t* conn, spe_string_t* data) {
       }
     }
     // peer close or not eagain
-    conn->_closed = true;
+    conn->closed = true;
     break;
   }
   // read error or read close, copy data
-  spe_string_copy(data, conn->_read_buffer);
-  spe_string_clean(conn->_read_buffer);
-  conn->_rtype = SPE_CONB_READNONE;
+  spe_string_copy(data, conn->readBuffer);
+  spe_string_clean(conn->readBuffer);
+  conn->rtype = SPE_CONB_READNONE;
   return ret;
 }
 
@@ -87,8 +87,8 @@ spe_conb_read
 int 
 spe_conb_read(spe_conb_t* conn, spe_string_t* buf) {
   ASSERT(conn && buf);
-  if (conn->_closed || conn->_error) return SPE_CONB_INNER;
-  conn->_rtype = SPE_CONB_READ;
+  if (conn->closed || conn->error) return SPE_CONB_INNER;
+  conn->rtype = SPE_CONB_READ;
   return spe_conb_read_common(conn, buf);
 }
 
@@ -101,9 +101,9 @@ spe_conb_readbytes
 int 
 spe_conb_readbytes(spe_conb_t* conn, unsigned len, spe_string_t* buf) {
   ASSERT(conn && len && buf);
-  if (conn->_closed || conn->_error) return SPE_CONB_INNER;
-  conn->_rtype  = SPE_CONB_READBYTES;    
-  conn->_rbytes = len;
+  if (conn->closed || conn->error) return SPE_CONB_INNER;
+  conn->rtype  = SPE_CONB_READBYTES;    
+  conn->rbytes = len;
   return spe_conb_read_common(conn, buf);
 }
 
@@ -115,9 +115,9 @@ spe_conb_readuntil
 int 
 spe_conb_readuntil(spe_conb_t* conn, const char* delim, spe_string_t* buf) {
   ASSERT(conn && buf && delim);
-  if (conn->_closed || conn->_error) return SPE_CONB_INNER;
-  conn->_rtype  = SPE_CONB_READUNTIL;
-  conn->_delim  = delim;
+  if (conn->closed || conn->error) return SPE_CONB_INNER;
+  conn->rtype  = SPE_CONB_READUNTIL;
+  conn->delim  = delim;
   return spe_conb_read_common(conn, buf);
 }
 
@@ -133,13 +133,13 @@ spe_conb_writeb
 int 
 spe_conb_writeb(spe_conb_t* conn, char *buf, unsigned len) {
   ASSERT(conn && buf && len);
-  if (conn->_closed || conn->_error) return SPE_CONB_INNER;
+  if (conn->closed || conn->error) return SPE_CONB_INNER;
   int total_write = 0;
   while (total_write < len) {
-    int res = write(conn->_fd, buf + total_write, len);
+    int res = write(conn->fd, buf + total_write, len);
     if (res == SPE_CONB_ERROR) {
       if (errno == EAGAIN || errno == EWOULDBLOCK) return SPE_CONB_TIMEOUT;
-      conn->_error = true;
+      conn->error = true;
       return res;
     }
     total_write += res;
@@ -159,7 +159,7 @@ spe_conb_set_timeout(spe_conb_t* conn, unsigned read_timeout, unsigned write_tim
   if (read_timeout) {
     tv.tv_sec   = read_timeout/ 1000;
     tv.tv_usec  = (read_timeout % 1000) * 1000;
-    if (setsockopt(conn->_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+    if (setsockopt(conn->fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
       SPE_LOG_ERR("setsockopt error");
       return false;
     }
@@ -167,7 +167,7 @@ spe_conb_set_timeout(spe_conb_t* conn, unsigned read_timeout, unsigned write_tim
   if (write_timeout) {
     tv.tv_sec   = write_timeout/ 1000;
     tv.tv_usec  = (write_timeout % 1000) * 1000;
-    if (setsockopt(conn->_fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0) {
+    if (setsockopt(conn->fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0) {
       SPE_LOG_ERR("setsockopt error");
       return false;
     }
@@ -193,18 +193,18 @@ spe_conb_create(unsigned fd) {
     return NULL;
   }
   spe_conb_t* conn = &_conn[fd];
-  conn->_fd = fd;      
-  if (!conn->_read_buffer && !(conn->_read_buffer = spe_string_create(BUF_SIZE))) {
+  conn->fd = fd;      
+  if (!conn->readBuffer && !(conn->readBuffer = spe_string_create(BUF_SIZE))) {
     SPE_LOG_ERR("read buffer create error");
     return NULL;
   }
-  spe_string_clean(conn->_read_buffer);
+  spe_string_clean(conn->readBuffer);
   // init read
-  conn->_rtype  = SPE_CONB_READNONE;
-  conn->_delim  = NULL;
-  conn->_rbytes = 0;
-  conn->_closed = 0;
-  conn->_error  = 0;
+  conn->rtype  = SPE_CONB_READNONE;
+  conn->delim  = NULL;
+  conn->rbytes = 0;
+  conn->closed = 0;
+  conn->error  = 0;
   return conn;
 }
 
@@ -216,7 +216,7 @@ spe_conb_destroy
 void
 spe_conb_destroy(spe_conb_t* conn) {
   ASSERT(conn);
-  spe_sock_close(conn->_fd);
+  spe_sock_close(conn->fd);
 }
 
 /*

@@ -31,6 +31,7 @@ driver_machine(void* arg) {
       free(msg);
       cJSON_Delete(obj);
       spe_conn_flush(conn);
+      spe_conn_flush(conn);
       break;
     case PF_END:
       spe_conn_destroy(conn);

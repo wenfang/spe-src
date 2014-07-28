@@ -45,9 +45,9 @@ bool
 speServerUseAcceptMutex() {
   if (!gServer) return false;
   if (gServer->acceptMutex) return true;
-  gServer->acceptMutex = spe_shmux_create();
+  gServer->acceptMutex = SpeShmuxCreate();
   if (!gServer->acceptMutex) {
-    SPE_LOG_ERR("spe_shmux_create error");
+    SPE_LOG_ERR("SpeShmuxCreate error");
     return false;
   }
   return true;
@@ -130,7 +130,7 @@ SpeServerDeinit
 void
 SpeServerDeinit() {
   if (!gServer) return;
-  if (gServer->acceptMutex) spe_shmux_destroy(gServer->acceptMutex);
+  if (gServer->acceptMutex) SpeShmuxDestroy(gServer->acceptMutex);
   spe_sock_close(gServer->sfd);
   free(gServer);
   gServer = NULL; 

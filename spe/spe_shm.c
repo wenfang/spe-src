@@ -6,11 +6,11 @@
 
 /*
 ===================================================================================================
-spe_shm_alloc
+SpeShmAlloc
 ===================================================================================================
 */
 spe_shm_t*
-spe_shm_alloc(unsigned size) {
+SpeShmAlloc(unsigned size) {
   spe_shm_t* shm = calloc(1, sizeof(spe_shm_t));
   if (!shm) {
     SPE_LOG_ERR("spe_shm alloc calloc error");
@@ -29,29 +29,29 @@ spe_shm_alloc(unsigned size) {
 
 /*
 ===================================================================================================
-spe_shm_free
+SpeShmFree
 ===================================================================================================
 */
 void
-spe_shm_free(spe_shm_t* shm) {
+SpeShmFree(spe_shm_t* shm) {
   ASSERT(shm);
   if (munmap(shm->addr, shm->size) == -1) {
-    SPE_LOG_ERR("spe_shm_free error");
+    SPE_LOG_ERR("SpeShmFree error");
   }
   free(shm);
 }
 
 /*
 ===================================================================================================
-spe_shmux_create
+SpeShmuxCreate
 ===================================================================================================
 */
 pthread_mutex_t*
-spe_shmux_create() {
+SpeShmuxCreate() {
   pthread_mutex_t* shmux = mmap(NULL, sizeof(pthread_mutex_t), PROT_READ|PROT_WRITE,
       MAP_ANON|MAP_SHARED, -1, 0);
   if (!shmux) {
-    SPE_LOG_ERR("spe_shmux_create mmap error");
+    SPE_LOG_ERR("SpeShmuxCreate mmap error");
     return NULL;
   }
   pthread_mutexattr_t mattr;
@@ -63,14 +63,14 @@ spe_shmux_create() {
 
 /*
 ===================================================================================================
-spe_shmux_destroy
+SpeShmuxDestroy
 ===================================================================================================
 */
 void
-spe_shmux_destroy(pthread_mutex_t* shmux) {
+SpeShmuxDestroy(pthread_mutex_t* shmux) {
   ASSERT(shmux);
   pthread_mutex_destroy(shmux);
   if (munmap(shmux, sizeof(pthread_mutex_t) == -1)) {
-    SPE_LOG_ERR("spe_shmux_destroy error");
+    SPE_LOG_ERR("SpeShmuxDestroy error");
   }
 }
