@@ -16,7 +16,7 @@ struct SpeRedis_s {
   spe_slist_t*  sendBuffer;
   spe_slist_t*  recvBuffer;
   unsigned      status:7;
-  unsigned      error:1;
+  unsigned      Error:1;
 };
 typedef struct SpeRedis_s SpeRedis_t;
 
@@ -32,10 +32,10 @@ extern bool
 SpeRedisDo(SpeRedis_t* sr, spe_handler_t handler, int nargs, ...);
 
 extern SpeRedis_t*
-SpeRedisGet(SpeRedisPool_t* srp);
+SpeRedisPoolGet(SpeRedisPool_t* srp);
 
 extern void
-SpeRedisPut(SpeRedisPool_t* srp, SpeRedis_t* sr);
+SpeRedisPoolPut(SpeRedisPool_t* srp, SpeRedis_t* sr);
 
 extern SpeRedisPool_t*
 SpeRedisPoolCreate(const char* host, const char* port, unsigned size);

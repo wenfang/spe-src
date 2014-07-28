@@ -65,7 +65,7 @@ speRedisGet
 ===================================================================================================
 */
 SpeRedis_t*
-SpeRedisGet(SpeRedisPool_t* srp) {
+SpeRedisPoolGet(SpeRedisPool_t* srp) {
   ASSERT(srp);
   if (!srp->len) return speRedisCreate(srp->host, srp->port);
   return srp->poolData[--srp->len];
@@ -77,7 +77,7 @@ speRedisPut
 ===================================================================================================
 */
 void
-SpeRedisPut(SpeRedisPool_t* srp, SpeRedis_t* sr) {
+SpeRedisPoolPut(SpeRedisPool_t* srp, SpeRedis_t* sr) {
   ASSERT(srp && sr);
   if (srp->len == srp->size) {
     speRedisDestroy(sr);
@@ -95,9 +95,9 @@ static void
 driver_machine(SpeRedis_t* sr) {
   if (sr->status != SPE_REDIS_INIT && (sr->conn->Error || sr->conn->Closed)) {
     spe_conn_destroy(sr->conn);
-    sr->conn = NULL;
-    sr->status = SPE_REDIS_INIT;
-    sr->error = 1;
+    sr->conn    = NULL;
+    sr->status  = SPE_REDIS_INIT;
+    sr->Error   = 1;
     SPE_HANDLER_CALL(sr->handler);
     return;
   }
@@ -108,19 +108,19 @@ driver_machine(SpeRedis_t* sr) {
       cfd = spe_sock_tcp_socket();
       if (cfd < 0) {
         SPE_LOG_ERR("spe_sock_tcp_socket error");
-        sr->error = 1;
+        sr->Error = 1;
         SPE_HANDLER_CALL(sr->handler);
         return;
       }
       if (!(sr->conn = spe_conn_create(cfd))) {
         SPE_LOG_ERR("spe_conn_create error");
         spe_sock_close(cfd);
-        sr->error = 1;
+        sr->Error = 1;
         SPE_HANDLER_CALL(sr->handler);
         return;
       }
-      sr->error = 0;
-      sr->status = SPE_REDIS_CONN;
+      sr->Error   = 0;
+      sr->status  = SPE_REDIS_CONN;
       sr->conn->ReadCallback.Handler  = SPE_HANDLER1(driver_machine, sr);
       sr->conn->WriteCallback.Handler = SPE_HANDLER1(driver_machine, sr);
       spe_conn_connect(sr->conn, sr->host, sr->port);
@@ -179,7 +179,7 @@ speRedisPoolDo
 ===================================================================================================
 */
 bool
-speRedisPoolDo(SpeRedis_t* sr, spe_handler_t handler, int nargs, ...) {
+SpeRedisDo(SpeRedis_t* sr, spe_handler_t handler, int nargs, ...) {
   ASSERT(sr && nargs>0);
   // init redis for new command
   sr->handler = handler;
