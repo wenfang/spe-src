@@ -38,12 +38,10 @@ drive_machine(void* arg) {
         return;
       }
       rds->status = RDS_GET;
-      SpeRedisDo(rds->red, SPE_HANDLER1(drive_machine, rds), 2, "get", "mydokey");
+      SpeRedisGet(rds->red, SPE_HANDLER1(drive_machine, rds), "mydokey");
       break;
     case RDS_GET:
-      for (int i=0; i<rds->red->recvBuffer->len; i++) {
-        spe_conn_write(rds->conn, rds->red->recvBuffer->data[i]);
-      }
+      spe_conn_write(rds->conn, rds->red->Buffer->data[0]);
       rds->status = RDS_CLOSE;
       spe_conn_flush(rds->conn);
       break;

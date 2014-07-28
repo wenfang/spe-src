@@ -323,7 +323,7 @@ spe_string_destroy
 */
 void
 spe_string_destroy(spe_string_t* str) {
-  ASSERT(str);
+  if (!str) return;
   if (str->_start != str->_buffer) free(str->_start);
   free(str);
 }

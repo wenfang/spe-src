@@ -13,8 +13,9 @@ struct SpeRedis_s {
   const char*   host;
   const char*   port;
   spe_handler_t handler;
+  spe_slist_t*  Buffer;
   spe_slist_t*  sendBuffer;
-  spe_slist_t*  recvBuffer;
+  unsigned      blockLeft;
   unsigned      status:7;
   unsigned      Error:1;
 };
@@ -28,8 +29,14 @@ struct SpeRedisPool_s {
   SpeRedis_t* poolData[0];
 };
 
-extern bool
+extern void
 SpeRedisDo(SpeRedis_t* sr, spe_handler_t handler, int nargs, ...);
+
+extern void
+SpeRedisGet(SpeRedis_t* sr, spe_handler_t handler, const char* key);
+
+extern void
+SpeRedisSet(SpeRedis_t* sr, spe_handler_t handler, const char* key, const char* value);
 
 extern SpeRedis_t*
 SpeRedisPoolGet(SpeRedisPool_t* srp);

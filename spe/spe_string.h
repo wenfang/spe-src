@@ -116,7 +116,7 @@ spe_slist_create() {
 
 static inline void
 spe_slist_destroy(spe_slist_t* slist) {
-  ASSERT(slist);
+  if (!slist) return;
   for (int i = 0; i < slist->_size; i++) {
     if (slist->data[i]) spe_string_destroy(slist->data[i]);
   }

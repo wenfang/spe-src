@@ -12,9 +12,7 @@ on_get(void* arg) {
     SpeRedisPoolPut(pool, sr);
     return;
   }
-  for (int i=0; i<sr->recvBuffer->len; i++) {
-    printf("%s\n", sr->recvBuffer->data[i]->data);
-  }
+  printf("%s\n", sr->Buffer->data[0]->data);
   SpeRedisPoolPut(pool, sr);
 }
 
@@ -30,7 +28,7 @@ mod_init(void) {
     fprintf(stderr, "SpeRedisPoolGet Error\n");
     return false;
   }
-  SpeRedisDo(sr, SPE_HANDLER1(on_get, sr), 2, "get", "mydokey");
+  SpeRedisSet(sr, SPE_HANDLER1(on_get, sr), "mydokey", "ValueHere!!!");
   return true;
 }
 

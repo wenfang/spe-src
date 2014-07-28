@@ -8,8 +8,9 @@
 #define SPE_REDIS_INIT      0
 #define SPE_REDIS_CONN      1
 #define SPE_REDIS_SEND      2
-#define SPE_REDIS_RECV_LINE 3
-#define SPE_REDIS_RECV_DATA 4
+#define SPE_REDIS_RECV_HEAD 3
+#define SPE_REDIS_RECV_SIZE 4
+#define SPE_REDIS_RECV_DATA 5
 
 /*
 ===================================================================================================
@@ -24,25 +25,19 @@ speRedisCreate(const char* host, const char* port) {
     SPE_LOG_ERR("spe_redis calloc error");
     return NULL;
   }
-  sr->host = host;
-  sr->port = port;
+  sr->host        = host;
+  sr->port        = port;
+  sr->Buffer      = spe_slist_create();
+  sr->sendBuffer  = spe_slist_create();
   // init buffer
-  if (!(sr->sendBuffer = spe_slist_create())) {
-    SPE_LOG_ERR("spe_slist_create error");
-    goto failout1;
-  }
-  if (!(sr->recvBuffer = spe_slist_create())) {
-    SPE_LOG_ERR("spe_slist_create error");
-    goto failout2;
+  if (!sr->Buffer || !sr->sendBuffer) {
+    SPE_LOG_ERR("spe_string_create or spe_slist_create error");
+    spe_slist_destroy(sr->Buffer);
+    spe_slist_destroy(sr->sendBuffer);
+    return NULL;
   }
   sr->status = SPE_REDIS_INIT;
   return sr;
-
-failout2:
-  spe_slist_destroy(sr->sendBuffer);
-failout1:
-  free(sr);
-  return NULL;
 }
 
 /*
@@ -53,8 +48,8 @@ speRedisDestroy
 static void
 speRedisDestroy(SpeRedis_t* sr) {
   ASSERT(sr);
+  spe_slist_destroy(sr->Buffer);
   spe_slist_destroy(sr->sendBuffer);
-  spe_slist_destroy(sr->recvBuffer);
   if (sr->conn) spe_conn_destroy(sr->conn);
   free(sr);
 }
@@ -102,6 +97,7 @@ driver_machine(SpeRedis_t* sr) {
     return;
   }
   int cfd;
+  int resSize;
   char buf[1024];
   switch (sr->status) {
     case SPE_REDIS_INIT:
@@ -137,38 +133,62 @@ driver_machine(SpeRedis_t* sr) {
       spe_conn_flush(sr->conn);
       break;
     case SPE_REDIS_SEND:
-      sr->status = SPE_REDIS_RECV_LINE;
+      sr->status = SPE_REDIS_RECV_HEAD;
       spe_conn_readuntil(sr->conn, "\r\n");
       break;
-    case SPE_REDIS_RECV_LINE:
+    case SPE_REDIS_RECV_HEAD: // recv the first response line
       if (sr->conn->Buffer->data[0] == '+' || sr->conn->Buffer->data[0] == '-' ||
           sr->conn->Buffer->data[0] == ':') {
-        spe_slist_append(sr->recvBuffer, sr->conn->Buffer);
+        spe_slist_append(sr->Buffer, sr->conn->Buffer);
         sr->status = SPE_REDIS_CONN;
         SPE_HANDLER_CALL(sr->handler);
         return;
       }
       if (sr->conn->Buffer->data[0] == '$') {
-        spe_slist_append(sr->recvBuffer, sr->conn->Buffer);
-        int resSize = atoi(sr->conn->Buffer->data+1);
+        resSize = atoi(sr->conn->Buffer->data+1);
         if (resSize <= 0) {
           sr->status = SPE_REDIS_CONN;
           SPE_HANDLER_CALL(sr->handler);
           return;
         }
-        sr->status = SPE_REDIS_RECV_DATA;
+        sr->blockLeft = 1;
+        sr->status    = SPE_REDIS_RECV_DATA;
         spe_conn_readbytes(sr->conn, resSize+2);
         return;
       }
       if (sr->conn->Buffer->data[0] == '*') {
-        // TODO: ADD BLOCK SUPPOR
+        resSize = atoi(sr->conn->Buffer->data+1);
+        if (resSize <= 0) {
+          sr->status = SPE_REDIS_CONN;
+          SPE_HANDLER_CALL(sr->handler);
+          return;
+        }
+        sr->blockLeft = (unsigned)resSize;
+        sr->status    = SPE_REDIS_RECV_SIZE;
+        spe_conn_readuntil(sr->conn, "\r\n");
         return;
       }
       break;
+    case SPE_REDIS_RECV_SIZE:
+      resSize = atoi(sr->conn->Buffer->data+1);
+      if (resSize <= 0) {
+        sr->status = SPE_REDIS_CONN;
+        SPE_HANDLER_CALL(sr->handler);
+        return;
+      }
+      sr->status = SPE_REDIS_RECV_DATA;
+      spe_conn_readbytes(sr->conn, resSize+2);
+      return;
     case SPE_REDIS_RECV_DATA:
-      spe_slist_appendb(sr->recvBuffer, sr->conn->Buffer->data, sr->conn->Buffer->len-2);
-      sr->status = SPE_REDIS_CONN;
-      SPE_HANDLER_CALL(sr->handler);
+      spe_slist_appendb(sr->Buffer, sr->conn->Buffer->data, sr->conn->Buffer->len-2);
+      sr->blockLeft--;
+      if (sr->blockLeft == 0) {
+        sr->status = SPE_REDIS_CONN;
+        SPE_HANDLER_CALL(sr->handler);
+        return;
+      }
+      sr->status = SPE_REDIS_RECV_SIZE;
+      spe_conn_readuntil(sr->conn, "\r\n");
       break;
   }
 }
@@ -178,13 +198,13 @@ driver_machine(SpeRedis_t* sr) {
 speRedisPoolDo
 ===================================================================================================
 */
-bool
+void
 SpeRedisDo(SpeRedis_t* sr, spe_handler_t handler, int nargs, ...) {
   ASSERT(sr && nargs>0);
   // init redis for new command
   sr->handler = handler;
+  spe_slist_clean(sr->Buffer);
   spe_slist_clean(sr->sendBuffer);
-  spe_slist_clean(sr->recvBuffer);
   // generate send command
   char* key;
   va_list ap;
@@ -196,7 +216,28 @@ SpeRedisDo(SpeRedis_t* sr, spe_handler_t handler, int nargs, ...) {
   key = va_arg(ap, char*);
   va_end(ap);
   driver_machine(sr);
-  return true;
+}
+
+/*
+===================================================================================================
+SpeRedisGet
+===================================================================================================
+*/
+void
+SpeRedisGet(SpeRedis_t* sr, spe_handler_t handler, const char* key) {
+  ASSERT(sr && key);
+  SpeRedisDo(sr, handler, 2, "get", key);
+}
+
+/*
+===================================================================================================
+SpeRedisSet
+===================================================================================================
+*/
+void
+SpeRedisSet(SpeRedis_t* sr, spe_handler_t handler, const char* key, const char* value) {
+  ASSERT(sr && key && value);
+  SpeRedisDo(sr, handler, 3, "set", key, value);
 }
 
 /*
