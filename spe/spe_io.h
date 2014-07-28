@@ -4,7 +4,7 @@
 #include "spe_string.h"
 
 struct spe_io_s {
-  spe_string_t* Data;
+  spe_string_t* Buffer;
   spe_string_t* readBuffer;
   spe_string_t* writeBuffer;
   const char*   delim;
@@ -14,41 +14,48 @@ struct spe_io_s {
   unsigned      closed:1;
   unsigned      error:1;
 };
-typedef struct spe_io_s spe_io_t;
+typedef struct spe_io_s SpeIo_t;
 
 extern int
-SpeIoRead(spe_io_t* io);
+SpeIoRead(SpeIo_t* io);
 
 extern int  
-SpeIoReaduntil(spe_io_t* io, const char* delim);
+SpeIoReaduntil(SpeIo_t* io, const char* delim);
 
 extern int  
-SpeIoReadbytes(spe_io_t* io, unsigned len);
+SpeIoReadbytes(SpeIo_t* io, unsigned len);
 
 extern int
-SpeIoFlush(spe_io_t* io);
+SpeIoFlush(SpeIo_t* io);
 
 static inline bool
-SpeIoWrite(spe_io_t* io, spe_string_t* buf) {
+SpeIoWrite(SpeIo_t* io, spe_string_t* buf) {
   ASSERT(io && buf);
   if (io->closed || io->error) return false;
   return spe_string_catb(io->writeBuffer, buf->data, buf->len);
 }
 
 static inline bool
-SpeIoWriteb(spe_io_t* io, char* buf, unsigned len) {
+SpeIoWriteb(SpeIo_t* io, char* buf, unsigned len) {
   ASSERT(io && buf && len);
   if (io->closed || io->error) return false;
   return spe_string_catb(io->writeBuffer, buf, len);
 }
 
-extern spe_io_t*
+static inline bool
+SpeIoWrites(SpeIo_t* io, char* buf) {
+  ASSERT(io && buf);
+  if (io->closed || io->error) return false;
+  return spe_string_catb(io->writeBuffer, buf, strlen(buf));
+}
+
+extern SpeIo_t*
 SpeIoCreate(const char* fname);
 
-extern spe_io_t*
+extern SpeIo_t*
 SpeIoCreateFd(int fd);
 
 extern void
-SpeIoDestroy(spe_io_t* io);
+SpeIoDestroy(SpeIo_t* io);
 
 #endif

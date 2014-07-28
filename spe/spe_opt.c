@@ -88,14 +88,14 @@ speOptCreate(const char* configFileName) {
   char key[KEY_MAXLEN];
   char val[VAL_MAXLEN];
 
-  spe_io_t* io = SpeIoCreate(configFileName);
+  SpeIo_t* io = SpeIoCreate(configFileName);
   if (!io) return false;
   // set default section
   strcpy(sec, "global");
   while (1) {
     // get one line from file
     if (SpeIoReaduntil(io, "\n") <= 0) break;
-    spe_string_t* line = io->Data;
+    spe_string_t* line = io->Buffer;
     spe_string_strim(line);
     // ignore empty and comment line
     if (line->len == 0 || line->data[0] == '#') continue;

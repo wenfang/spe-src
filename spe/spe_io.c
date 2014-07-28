@@ -14,30 +14,30 @@
 #define SPE_IO_READUNTIL  3
 
 static int
-ioReadCommon(spe_io_t* io) {
+ioReadCommon(SpeIo_t* io) {
   int res;
   for (;;) {
     if (io->rtype == SPE_IO_READ) {
       if (io->readBuffer->len > 0) {
-        spe_string_copy(io->Data, io->readBuffer);
+        spe_string_copy(io->Buffer, io->readBuffer);
         spe_string_clean(io->readBuffer);
         io->rtype = SPE_IO_READNONE;
-        return io->Data->len;
+        return io->Buffer->len;
       }
     } else if (io->rtype == SPE_IO_READBYTES) {
       if (io->rbytes <= io->readBuffer->len) {
-        spe_string_copyb(io->Data, io->readBuffer->data, io->rbytes);
+        spe_string_copyb(io->Buffer, io->readBuffer->data, io->rbytes);
         spe_string_consume(io->readBuffer, io->rbytes);
         io->rtype = SPE_IO_READNONE;
-        return io->Data->len;
+        return io->Buffer->len;
       }
     } else if (io->rtype == SPE_IO_READUNTIL) {
       int pos = spe_string_search(io->readBuffer, io->delim);
       if (pos != -1) {
-        spe_string_copyb(io->Data, io->readBuffer->data, pos);
+        spe_string_copyb(io->Buffer, io->readBuffer->data, pos);
         spe_string_consume(io->readBuffer, pos+strlen(io->delim));
         io->rtype = SPE_IO_READNONE;
-        return io->Data->len;
+        return io->Buffer->len;
       }
     }
     res = spe_string_read_append(io->fd, io->readBuffer, BUF_LEN);
@@ -52,19 +52,22 @@ ioReadCommon(spe_io_t* io) {
     }
   }
   // read error copy data
-  spe_string_copy(io->Data, io->readBuffer);
+  spe_string_copy(io->Buffer, io->readBuffer);
   spe_string_clean(io->readBuffer);
   io->rtype = SPE_IO_READNONE;
   return res;
 }
 
+int
+SpeIoRead(SpeIo_t* io) {
+}
 /*
 ===================================================================================================
 spe_io_readbytes
 ===================================================================================================
 */
 int 
-SpeIoReadbytes(spe_io_t* io, unsigned len) {
+SpeIoReadbytes(SpeIo_t* io, unsigned len) {
   ASSERT(io && len);
   if (io->closed || io->error || io->rtype != SPE_IO_READNONE) return -1;
   io->rtype  = SPE_IO_READBYTES;
@@ -78,7 +81,7 @@ SpeIoReadline
 ===================================================================================================
 */
 int 
-SpeIoReaduntil(spe_io_t* io, const char* delim) {  
+SpeIoReaduntil(SpeIo_t* io, const char* delim) {  
   ASSERT(io && delim);
   if (io->closed || io->error || io->rtype != SPE_IO_READNONE) return -1;
   io->rtype  = SPE_IO_READUNTIL;
@@ -91,19 +94,19 @@ SpeIoReaduntil(spe_io_t* io, const char* delim) {
 SpeIoCreate
 ===================================================================================================
 */
-spe_io_t*
+SpeIo_t*
 SpeIoCreate(const char* fname) {
   ASSERT(fname);
-  spe_io_t* io = calloc(1, sizeof(spe_io_t));
+  SpeIo_t* io = calloc(1, sizeof(SpeIo_t));
   if (!io) return NULL;
   if ((io->fd = open(fname, O_RDWR)) < 0) {
     free(io);
     return NULL;
   }
-  io->Data        = spe_string_create(0);
+  io->Buffer      = spe_string_create(0);
   io->readBuffer  = spe_string_create(0);
   io->writeBuffer = spe_string_create(0);
-  if (!io->Data || !io->readBuffer || !io->writeBuffer) {
+  if (!io->Buffer || !io->readBuffer || !io->writeBuffer) {
     SpeIoDestroy(io);
     return NULL;
   }
@@ -115,18 +118,19 @@ SpeIoCreate(const char* fname) {
 SpeIoCreateFd
 ===================================================================================================
 */
-spe_io_t*
+SpeIo_t*
 SpeIoCreateFd(int fd) {
-  spe_io_t* io = calloc(1, sizeof(spe_io_t));
+  SpeIo_t* io = calloc(1, sizeof(SpeIo_t));
   if (!io) return NULL;
-  io->fd           = fd;
-  io->Data          = spe_string_create(0);
+  io->fd          = fd;
+  io->Buffer      = spe_string_create(0);
   io->readBuffer  = spe_string_create(0);
   io->writeBuffer = spe_string_create(0);
-  if (!io->Data || !io->readBuffer || !io->writeBuffer) {
-    spe_string_destroy(io->Data);
+  if (!io->Buffer || !io->readBuffer || !io->writeBuffer) {
+    spe_string_destroy(io->Buffer);
     spe_string_destroy(io->readBuffer);
     spe_string_destroy(io->writeBuffer);
+    free(io);
     return NULL;
   }
   return io;
@@ -138,11 +142,11 @@ SpeIoDestroy
 ===================================================================================================
 */
 void 
-SpeIoDestroy(spe_io_t* io) {
+SpeIoDestroy(SpeIo_t* io) {
   ASSERT(io);
-  if (io->Data) spe_string_destroy(io->Data);
-  if (io->readBuffer) spe_string_destroy(io->readBuffer);
-  if (io->writeBuffer) spe_string_destroy(io->writeBuffer);
+  spe_string_destroy(io->Buffer);
+  spe_string_destroy(io->readBuffer);
+  spe_string_destroy(io->writeBuffer);
   close(io->fd);
   free(io);
 }

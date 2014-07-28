@@ -11,13 +11,14 @@
 #define SPE_CONB_INNER    -3
 
 struct spe_conb_s {
+  spe_string_t* Buffer;
   spe_string_t* readBuffer; // read read buffer 
-  const char*   delim;       // the delim when readtype is READUNTIL 
-  unsigned      rbytes;      // read data size when readtype is READBYTES 
-  unsigned      fd;          // fd to control
-  unsigned      rtype:2;     // read type
-  unsigned      closed:1;    // peer closed
-  unsigned      error:1;     // peer error  
+  const char*   delim;      // the delim when readtype is READUNTIL 
+  unsigned      rbytes;     // read data size when readtype is READBYTES 
+  unsigned      fd;         // fd to control
+  unsigned      rtype:2;    // read type
+  unsigned      closed:1;   // peer closed
+  unsigned      error:1;    // peer error  
 };  
 typedef struct spe_conb_s spe_conb_t;
 

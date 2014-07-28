@@ -68,7 +68,7 @@ extern bool
 spe_conn_flush(spe_conn_t* conn);
 
 extern bool
-spe_conn_set_timeout(spe_conn_t* conn, unsigned read_expire_time, unsigned write_expire_time);
+spe_conn_set_timeout(spe_conn_t* conn, unsigned readExpireTime, unsigned writeExpireTime);
 
 extern spe_conn_t*
 spe_conn_create(unsigned fd);
