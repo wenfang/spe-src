@@ -11,8 +11,88 @@
 #define SPE_REDIS_RECV_LINE 3
 #define SPE_REDIS_RECV_DATA 4
 
+/*
+===================================================================================================
+speRedisCreate
+===================================================================================================
+*/
+static SpeRedis_t*
+speRedisCreate(const char* host, const char* port) {
+  ASSERT(host && port);
+  SpeRedis_t* sr = calloc(1, sizeof(SpeRedis_t));
+  if (!sr) {
+    SPE_LOG_ERR("spe_redis calloc error");
+    return NULL;
+  }
+  sr->host = host;
+  sr->port = port;
+  // init buffer
+  if (!(sr->sendBuffer = spe_slist_create())) {
+    SPE_LOG_ERR("spe_slist_create error");
+    goto failout1;
+  }
+  if (!(sr->recvBuffer = spe_slist_create())) {
+    SPE_LOG_ERR("spe_slist_create error");
+    goto failout2;
+  }
+  sr->status = SPE_REDIS_INIT;
+  return sr;
+
+failout2:
+  spe_slist_destroy(sr->sendBuffer);
+failout1:
+  free(sr);
+  return NULL;
+}
+
+/*
+===================================================================================================
+speRedisDestroy
+===================================================================================================
+*/
+static void
+speRedisDestroy(SpeRedis_t* sr) {
+  ASSERT(sr);
+  spe_slist_destroy(sr->sendBuffer);
+  spe_slist_destroy(sr->recvBuffer);
+  if (sr->conn) spe_conn_destroy(sr->conn);
+  free(sr);
+}
+
+/*
+===================================================================================================
+speRedisGet
+===================================================================================================
+*/
+SpeRedis_t*
+SpeRedisGet(SpeRedisPool_t* srp) {
+  ASSERT(srp);
+  if (!srp->len) return speRedisCreate(srp->host, srp->port);
+  return srp->poolData[--srp->len];
+}
+
+/*
+===================================================================================================
+speRedisPut
+===================================================================================================
+*/
+void
+SpeRedisPut(SpeRedisPool_t* srp, SpeRedis_t* sr) {
+  ASSERT(srp && sr);
+  if (srp->len == srp->size) {
+    speRedisDestroy(sr);
+    return; 
+  }
+  srp->poolData[srp->len++] = sr;
+}
+
+/*
+===================================================================================================
+driver_machine
+===================================================================================================
+*/
 static void 
-driver_machine(spe_redis_t* sr) {
+driver_machine(SpeRedis_t* sr) {
   if (sr->status != SPE_REDIS_INIT && (sr->conn->Error || sr->conn->Closed)) {
     spe_conn_destroy(sr->conn);
     sr->conn = NULL;
@@ -47,10 +127,10 @@ driver_machine(spe_redis_t* sr) {
       break;
     case SPE_REDIS_CONN:
       // send request
-      sprintf(buf, "*%d\r\n", sr->send_buffer->len);
+      sprintf(buf, "*%d\r\n", sr->sendBuffer->len);
       spe_conn_writes(sr->conn, buf);
-      for (int i=0; i<sr->send_buffer->len; i++) {
-        sprintf(buf, "$%d\r\n%s\r\n", sr->send_buffer->data[i]->len, sr->send_buffer->data[i]->data);
+      for (int i=0; i<sr->sendBuffer->len; i++) {
+        sprintf(buf, "$%d\r\n%s\r\n", sr->sendBuffer->data[i]->len, sr->sendBuffer->data[i]->data);
         spe_conn_writes(sr->conn, buf);
       }
       sr->status = SPE_REDIS_SEND;
@@ -63,13 +143,13 @@ driver_machine(spe_redis_t* sr) {
     case SPE_REDIS_RECV_LINE:
       if (sr->conn->Buffer->data[0] == '+' || sr->conn->Buffer->data[0] == '-' ||
           sr->conn->Buffer->data[0] == ':') {
-        spe_slist_append(sr->recv_buffer, sr->conn->Buffer);
+        spe_slist_append(sr->recvBuffer, sr->conn->Buffer);
         sr->status = SPE_REDIS_CONN;
         SPE_HANDLER_CALL(sr->handler);
         return;
       }
       if (sr->conn->Buffer->data[0] == '$') {
-        spe_slist_append(sr->recv_buffer, sr->conn->Buffer);
+        spe_slist_append(sr->recvBuffer, sr->conn->Buffer);
         int resSize = atoi(sr->conn->Buffer->data+1);
         if (resSize <= 0) {
           sr->status = SPE_REDIS_CONN;
@@ -86,7 +166,7 @@ driver_machine(spe_redis_t* sr) {
       }
       break;
     case SPE_REDIS_RECV_DATA:
-      spe_slist_appendb(sr->recv_buffer, sr->conn->Buffer->data, sr->conn->Buffer->len-2);
+      spe_slist_appendb(sr->recvBuffer, sr->conn->Buffer->data, sr->conn->Buffer->len-2);
       sr->status = SPE_REDIS_CONN;
       SPE_HANDLER_CALL(sr->handler);
       break;
@@ -95,74 +175,58 @@ driver_machine(spe_redis_t* sr) {
 
 /*
 ===================================================================================================
-spe_redis_do
+speRedisPoolDo
 ===================================================================================================
 */
-void
-spe_redis_do(spe_redis_t* sr, spe_handler_t handler, int nargs, ...) {
+bool
+speRedisPoolDo(SpeRedis_t* sr, spe_handler_t handler, int nargs, ...) {
   ASSERT(sr && nargs>0);
   // init redis for new command
   sr->handler = handler;
-  spe_slist_clean(sr->send_buffer);
-  spe_slist_clean(sr->recv_buffer);
+  spe_slist_clean(sr->sendBuffer);
+  spe_slist_clean(sr->recvBuffer);
   // generate send command
   char* key;
   va_list ap;
   va_start(ap, nargs);
   for (int i=0; i<nargs; i++) {
     key = va_arg(ap, char*);
-    spe_slist_appends(sr->send_buffer, key);
+    spe_slist_appends(sr->sendBuffer, key);
   }
   key = va_arg(ap, char*);
   va_end(ap);
   driver_machine(sr);
+  return true;
 }
 
 /*
 ===================================================================================================
-spe_redis_create
+SpeRedisPoolCreate
 ===================================================================================================
 */
-spe_redis_t*
-spe_redis_create(const char* host, const char* port) {
+SpeRedisPool_t*
+SpeRedisPoolCreate(const char* host, const char* port, unsigned size) {
   ASSERT(host && port);
-  // set host and port
-  spe_redis_t* sr = calloc(1, sizeof(spe_redis_t));
-  if (!sr) {
-    SPE_LOG_ERR("spe_redis calloc error");
+  SpeRedisPool_t* srp = calloc(1, sizeof(SpeRedisPool_t) + size * sizeof(SpeRedis_t*));
+  if (!srp) {
+    SPE_LOG_ERR("SpeRedisPool calloc Error");
     return NULL;
   }
-  sr->host = host;
-  sr->port = port;
-  // init buffer
-  if (!(sr->send_buffer = spe_slist_create())) {
-    SPE_LOG_ERR("spe_slist_create error");
-    goto failout1;
-  }
-  if (!(sr->recv_buffer = spe_slist_create())) {
-    SPE_LOG_ERR("spe_slist_create error");
-    goto failout2;
-  }
-  sr->status = SPE_REDIS_INIT;
-  return sr;
-
-failout2:
-  spe_slist_destroy(sr->send_buffer);
-failout1:
-  free(sr);
-  return NULL;
+  srp->host = host;
+  srp->port = port;
+  srp->size = size;
+  srp->len  = 0;
+  return srp;
 }
 
 /*
 ===================================================================================================
-spe_redis_destroy
+SpeRedisPoolDestroy
 ===================================================================================================
 */
 void
-spe_redis_destroy(spe_redis_t* sr) {
-  ASSERT(sr);
-  spe_slist_destroy(sr->send_buffer);
-  spe_slist_destroy(sr->recv_buffer);
-  if (sr->conn) spe_conn_destroy(sr->conn);
-  free(sr);
+SpeRedisPoolDestroy(SpeRedisPool_t* srp) {
+  ASSERT(srp);
+  for (int i=0; i<srp->len; i++) speRedisDestroy(srp->poolData[i]);
+  free(srp);
 }

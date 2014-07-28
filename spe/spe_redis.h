@@ -5,25 +5,42 @@
 #include "spe_handler.h"
 #include "spe_string.h"
 
-struct spe_redis_s {
+struct SpeRedisPool_s;
+typedef struct SpeRedisPool_s SpeRedisPool_t;
+
+struct SpeRedis_s {
   spe_conn_t*   conn;
   const char*   host;
   const char*   port;
   spe_handler_t handler;
-  spe_slist_t*  send_buffer;
-  spe_slist_t*  recv_buffer;
+  spe_slist_t*  sendBuffer;
+  spe_slist_t*  recvBuffer;
   unsigned      status:7;
   unsigned      error:1;
 };
-typedef struct spe_redis_s spe_redis_t;
+typedef struct SpeRedis_s SpeRedis_t;
+
+struct SpeRedisPool_s {
+  const char* host;
+  const char* port;
+  unsigned    size;
+  unsigned    len;
+  SpeRedis_t* poolData[0];
+};
+
+extern bool
+SpeRedisDo(SpeRedis_t* sr, spe_handler_t handler, int nargs, ...);
+
+extern SpeRedis_t*
+SpeRedisGet(SpeRedisPool_t* srp);
 
 extern void
-spe_redis_do(spe_redis_t* sr, spe_handler_t handler, int nargs, ...);
+SpeRedisPut(SpeRedisPool_t* srp, SpeRedis_t* sr);
 
-extern spe_redis_t*
-spe_redis_create(const char* host, const char* port);
+extern SpeRedisPool_t*
+SpeRedisPoolCreate(const char* host, const char* port, unsigned size);
 
 extern void
-spe_redis_destroy(spe_redis_t* sr);
+SpeRedisPoolDestroy(SpeRedisPool_t* srp);
 
 #endif
