@@ -21,6 +21,8 @@
 #include "spe_conn.h"
 #include "spe_redis.h"
 #include "spe_shm.h"
+#include "spe_monitor.h"
 #include "cJSON.h"
+#include "http_parser.h"
 
 #endif

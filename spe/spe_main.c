@@ -1,5 +1,6 @@
 #include "spe_main.h"
 #include "spe_server.h"
+#include "spe_monitor.h"
 #include "spe_opt.h"
 #include "spe_signal.h"
 #include "spe_epoll.h"
@@ -50,6 +51,7 @@ main(int argc, char* argv[]) {
     return 1;
   }
   speServerStart();
+  speMonitorStart();
   // enter loop
   while (!GStop) {
     unsigned timeout = 300;

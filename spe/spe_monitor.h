@@ -3,10 +3,13 @@
 
 #include <stdbool.h>
 
+extern void
+speMonitorStart();
+
 extern bool
 SpeMonitorInit(const char* addr, int port);
 
 extern void
-SpeMonitorDeInit();
+SpeMonitorDeinit();
 
 #endif
