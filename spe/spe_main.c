@@ -38,8 +38,7 @@ main(int argc, char* argv[]) {
   }
   // set max open files
   if (!spe_set_max_open_files(MAX_FD)) {
-    fprintf(stderr, "[ERROR] Set Max Open Files Failed\n");
-    return 1;
+    fprintf(stderr, "[WARNNING] Set Max Open Files Failed\n");
   }
   // init signal
   speSignalInit();
