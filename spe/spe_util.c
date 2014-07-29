@@ -14,9 +14,9 @@ spe_daemon() {
   switch (fork()) {
   case -1:
     return -1;
-  case 0:
+  case 0:   // child return here
     break;
-  default:
+  default:  // parent return and exit
     exit(EXIT_SUCCESS);
   }
 
@@ -44,7 +44,7 @@ spe_spawn(unsigned procs) {
     if (!pid) return 0; // child return here
     if (pid < 0) return -1;
   }
-  return 1;
+  return 1; // parent return
 }
 
 /*

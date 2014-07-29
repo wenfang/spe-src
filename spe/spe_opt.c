@@ -121,11 +121,12 @@ speOptCreate(const char* configFileName) {
       return false;
     }
     spe_string_t* key_str = slist->data[0];
-    spe_string_t* val_str = slist->data[1];
     spe_string_strim(key_str);
-    spe_string_strim(val_str);
     strncpy(key, key_str->data, KEY_MAXLEN);
     key[KEY_MAXLEN-1] = 0;
+
+    spe_string_t* val_str = slist->data[1];
+    spe_string_strim(val_str);
     strncpy(val, val_str->data, VAL_MAXLEN);
     val[VAL_MAXLEN-1] = 0;
     spe_slist_destroy(slist);

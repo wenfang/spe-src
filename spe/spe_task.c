@@ -42,8 +42,7 @@ SpeTaskEnqueue
 bool
 SpeTaskEnqueue(SpeTask_t* task) {
   ASSERT(task);
-  // double check
-  if (task->status == SPE_TASK_QUEUE) return false;
+  if (task->status == SPE_TASK_QUEUE || task->status == SPE_TASK_RUN) return false;
   if (task->status == SPE_TASK_TIMER) {
     rb_erase(&task->timerNode, &timer_head);
     rb_init_node(&task->timerNode);
@@ -62,11 +61,10 @@ SpeTaskDequeue
 bool
 SpeTaskDequeue(SpeTask_t* task) {
   ASSERT(task);
-  // double check
   if (task->status != SPE_TASK_QUEUE) return false;
   list_del_init(&task->taskNode);
-  gTaskNum--;
   task->status = SPE_TASK_FREE;
+  gTaskNum--;
   return true;
 }
 
@@ -78,7 +76,7 @@ SpeTaskEnqueue_timer
 bool
 SpeTaskEnqueueTimer(SpeTask_t* task, unsigned long ms) {
   ASSERT(task);
-  if (task->status == SPE_TASK_QUEUE) return false;
+  if (task->status == SPE_TASK_QUEUE || task->status == SPE_TASK_RUN) return false;
   if (task->status == SPE_TASK_TIMER) {
     rb_erase(&task->timerNode, &timer_head);
     rb_init_node(&task->timerNode);
@@ -161,7 +159,7 @@ SpeThreadTaskDequeue(SpeTask_t* task) {
 
 /*
 ===================================================================================================
-spe_task_process
+speTaskProcess
 ===================================================================================================
 */
 void

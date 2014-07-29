@@ -13,13 +13,14 @@ typedef struct pf_conn_s pf_conn_t;
 static void
 driver_machine(void* arg) {
   pf_conn_t* pf_conn = arg;
-  cJSON *obj;
   spe_conn_t* conn = pf_conn->conn;
   if (conn->Closed || conn->Error) {
     spe_conn_destroy(conn);
     free(pf_conn);
     return;
   }
+
+  cJSON *obj;
   switch (pf_conn->status) {
     case PF_INIT:
       obj = cJSON_CreateObject();
@@ -30,7 +31,6 @@ driver_machine(void* arg) {
       spe_conn_writes(conn, msg);
       free(msg);
       cJSON_Delete(obj);
-      spe_conn_flush(conn);
       spe_conn_flush(conn);
       break;
     case PF_END:
