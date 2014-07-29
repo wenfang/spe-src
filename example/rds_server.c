@@ -17,6 +17,7 @@ typedef struct spe_rds_s spe_rds_t;
 static void
 drive_machine(void* arg) {
   spe_rds_t* rds = arg;
+  cJSON *obj;
   if (rds->red && rds->red->Error && rds->status != RDS_CLOSE) {
     rds->status = RDS_CLOSE;
     spe_conn_writes(rds->conn, "ERROR GET DATA\r\n");
@@ -41,7 +42,13 @@ drive_machine(void* arg) {
       SpeRedisGet(rds->red, SPE_HANDLER1(drive_machine, rds), "mydokey");
       break;
     case RDS_GET:
-      spe_conn_write(rds->conn, rds->red->Buffer->data[0]);
+      obj = cJSON_CreateObject();
+      cJSON_AddNumberToObject(obj, "res", 0);
+      cJSON_AddStringToObject(obj, "msg", rds->red->Buffer->data[0]->data);
+      char* msg = cJSON_PrintUnformatted(obj);
+      spe_conn_writes(rds->conn, msg);
+      free(msg);
+      cJSON_Delete(obj);
       rds->status = RDS_CLOSE;
       spe_conn_flush(rds->conn);
       break;

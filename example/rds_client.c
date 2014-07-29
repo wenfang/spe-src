@@ -28,7 +28,7 @@ mod_init(void) {
     fprintf(stderr, "SpeRedisPoolGet Error\n");
     return false;
   }
-  SpeRedisSet(sr, SPE_HANDLER1(on_get, sr), "mydokey", "ValueHere!!!");
+  SpeRedisSet(sr, SPE_HANDLER1(on_get, sr), "key1", "20");
   return true;
 }
 
