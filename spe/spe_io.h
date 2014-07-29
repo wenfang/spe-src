@@ -3,7 +3,7 @@
 
 #include "spe_string.h"
 
-struct spe_io_s {
+struct SpeIo_s {
   spe_string_t* Buffer;
   spe_string_t* readBuffer;
   spe_string_t* writeBuffer;
@@ -14,7 +14,7 @@ struct spe_io_s {
   unsigned      closed:1;
   unsigned      error:1;
 };
-typedef struct spe_io_s SpeIo_t;
+typedef struct SpeIo_s SpeIo_t;
 
 extern int
 SpeIoRead(SpeIo_t* io);

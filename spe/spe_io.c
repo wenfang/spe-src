@@ -6,13 +6,18 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#define BUF_LEN 1024
+#define BUF_LEN 4096
 
 #define SPE_IO_READNONE   0
 #define SPE_IO_READ       1
 #define SPE_IO_READBYTES  2
 #define SPE_IO_READUNTIL  3
 
+/*
+===================================================================================================
+ioReadCommon
+===================================================================================================
+*/
 static int
 ioReadCommon(SpeIo_t* io) {
   int res;
@@ -58,9 +63,19 @@ ioReadCommon(SpeIo_t* io) {
   return res;
 }
 
+/*
+===================================================================================================
+SpeIoRead
+===================================================================================================
+*/
 int
 SpeIoRead(SpeIo_t* io) {
+  ASSERT(io);
+  if (io->closed || io->error) return -1;
+  io->rtype = SPE_IO_READ;
+  return ioReadCommon(io);
 }
+
 /*
 ===================================================================================================
 spe_io_readbytes
@@ -69,7 +84,7 @@ spe_io_readbytes
 int 
 SpeIoReadbytes(SpeIo_t* io, unsigned len) {
   ASSERT(io && len);
-  if (io->closed || io->error || io->rtype != SPE_IO_READNONE) return -1;
+  if (io->closed || io->error) return -1;
   io->rtype  = SPE_IO_READBYTES;
   io->rbytes = len;
   return ioReadCommon(io);
@@ -77,16 +92,38 @@ SpeIoReadbytes(SpeIo_t* io, unsigned len) {
 
 /*
 ===================================================================================================
-SpeIoReadline
+SpeIoReaduntil
 ===================================================================================================
 */
 int 
 SpeIoReaduntil(SpeIo_t* io, const char* delim) {  
   ASSERT(io && delim);
-  if (io->closed || io->error || io->rtype != SPE_IO_READNONE) return -1;
+  if (io->closed || io->error) return -1;
   io->rtype  = SPE_IO_READUNTIL;
   io->delim  = delim;
   return ioReadCommon(io);
+}
+
+/*
+===================================================================================================
+SpeIoFlush
+===================================================================================================
+*/
+int
+SpeIoFlush(SpeIo_t* io) {
+  ASSERT(io);
+  if (io->closed || io->error) return -1;
+  int totalWrite = 0;
+  while (totalWrite < io->writeBuffer->len) {
+    int res = write(io->fd, io->writeBuffer->data+totalWrite, io->writeBuffer->len-totalWrite);
+    if (res < 0) {
+      if (errno == EINTR) continue;
+      io->error = 1;
+      break;
+    }
+    totalWrite += res;
+  }
+  return totalWrite;
 }
 
 /*
