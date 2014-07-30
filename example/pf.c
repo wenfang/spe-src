@@ -63,8 +63,14 @@ bool
 mod_init(void) {
   int port = SpeOptInt("pf_base", "port", 7879);
   int procs = SpeOptInt("pf_base", "procs", 4);
-  SpeServerInit("0.0.0.0", port, run);
-  SpeMonitorInit("127.0.0.1", 7880);
+  if (!SpeServerInit("0.0.0.0", port, run)) {
+    fprintf(stderr, "SpeServerInit Error\n");
+    return false;
+  }
+  if (!SpeMonitorInit("127.0.0.1", 7880)) {
+    fprintf(stderr, "SpeMonitorInit Error\n");
+    return false;
+  }
   SpeProcs(procs);
   return true;
 }

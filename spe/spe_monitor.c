@@ -24,7 +24,13 @@ struct monitorConn_s {
 typedef struct monitorConn_s monitorConn_t;
 
 static void
-processCmd(spe_conn_t* conn) {
+processCmd(monitorConn_t* mconn) {
+  spe_conn_t* conn = mconn->conn;
+  if (!strncasecmp(conn->Buffer->data, "quit", 4)) {
+    spe_conn_destroy(conn);
+    free(mconn);
+    return;
+  }
   spe_conn_writes(conn, "Stat Info ~~~\r\n");
   spe_conn_flush(conn);
 }
@@ -42,7 +48,7 @@ driver_machine(void* arg) {
   switch (mconn->status) {
     case MONITOR_WAITCMD:
       mconn->status = MONITOR_RESULT;
-      processCmd(conn);
+      processCmd(mconn);
       break;
     case MONITOR_RESULT:
       mconn->status = MONITOR_WAITCMD;
