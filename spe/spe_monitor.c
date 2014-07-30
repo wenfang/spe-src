@@ -70,9 +70,9 @@ monitorAccept() {
     spe_sock_close(cfd);
     return;
   }
-  mconn->conn = spe_conn_create(cfd);
+  mconn->conn = SpeConnCreate(cfd);
   if (!mconn->conn) {
-    SPE_LOG_ERR("monitor spe_conn_create error");
+    SPE_LOG_ERR("monitor SpeConnCreate error");
     free(mconn);
     spe_sock_close(cfd);
     return;

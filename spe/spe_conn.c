@@ -321,11 +321,11 @@ connInit(spe_conn_t* conn, unsigned fd) {
 
 /*
 ===================================================================================================
-spe_conn_create
+SpeConnCreate
 ===================================================================================================
 */
 spe_conn_t*
-spe_conn_create(unsigned fd) {
+SpeConnCreate(unsigned fd) {
   if (unlikely(fd >= MAX_FD)) return NULL;
   spe_sock_set_block(fd, 0);
   spe_conn_t* conn = &all_conn[fd];

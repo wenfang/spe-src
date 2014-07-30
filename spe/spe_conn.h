@@ -71,7 +71,7 @@ extern bool
 spe_conn_set_timeout(spe_conn_t* conn, unsigned readExpireTime, unsigned writeExpireTime);
 
 extern spe_conn_t*
-spe_conn_create(unsigned fd);
+SpeConnCreate(unsigned fd);
 
 extern void
 spe_conn_destroy(spe_conn_t* conn);

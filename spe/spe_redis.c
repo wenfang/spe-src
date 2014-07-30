@@ -108,8 +108,8 @@ driver_machine(SpeRedis_t* sr) {
         SPE_HANDLER_CALL(sr->handler);
         return;
       }
-      if (!(sr->conn = spe_conn_create(cfd))) {
-        SPE_LOG_ERR("spe_conn_create error");
+      if (!(sr->conn = SpeConnCreate(cfd))) {
+        SPE_LOG_ERR("SpeConnCreate error");
         spe_sock_close(cfd);
         sr->Error = 1;
         SPE_HANDLER_CALL(sr->handler);

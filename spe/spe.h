@@ -17,7 +17,6 @@
 #include "spe_handler.h"
 #include "spe_task.h"
 #include "spe_server.h"
-#include "spe_conb.h"
 #include "spe_conn.h"
 #include "spe_redis.h"
 #include "spe_shm.h"
