@@ -263,11 +263,11 @@ end_out:
 
 /*
 ===================================================================================================
-spe_conn_flush
+SpeConnFlush
 ===================================================================================================
 */
 bool
-spe_conn_flush(spe_conn_t* conn) {
+SpeConnFlush(spe_conn_t* conn) {
   ASSERT(conn && conn->writeType == SPE_CONN_WRITENONE);
   if (conn->Closed || conn->Error) return false;
   if (conn->writeBuffer->len == 0) {
@@ -348,11 +348,11 @@ SpeConnCreate(unsigned fd) {
 
 /*
 ===================================================================================================
-spe_conn_destroy
+SpeConnDestroy
 ===================================================================================================
 */
 void
-spe_conn_destroy(spe_conn_t* conn) {
+SpeConnDestroy(spe_conn_t* conn) {
   ASSERT(conn);
   SpeTaskDequeue(&conn->readTask);
   SpeTaskDequeue(&conn->writeTask);

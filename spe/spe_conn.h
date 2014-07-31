@@ -65,7 +65,7 @@ spe_conn_writes(spe_conn_t* conn, char* buf) {
 }
 
 extern bool
-spe_conn_flush(spe_conn_t* conn);
+SpeConnFlush(spe_conn_t* conn);
 
 extern bool
 spe_conn_set_timeout(spe_conn_t* conn, unsigned readExpireTime, unsigned writeExpireTime);
@@ -74,6 +74,6 @@ extern spe_conn_t*
 SpeConnCreate(unsigned fd);
 
 extern void
-spe_conn_destroy(spe_conn_t* conn);
+SpeConnDestroy(spe_conn_t* conn);
 
 #endif

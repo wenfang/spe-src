@@ -27,12 +27,12 @@ static void
 processCmd(monitorConn_t* mconn) {
   spe_conn_t* conn = mconn->conn;
   if (!strncasecmp(conn->Buffer->data, "quit", 4)) {
-    spe_conn_destroy(conn);
+    SpeConnDestroy(conn);
     free(mconn);
     return;
   }
   spe_conn_writes(conn, "Stat Info ~~~\r\n");
-  spe_conn_flush(conn);
+  SpeConnFlush(conn);
 }
 
 static void
@@ -40,7 +40,7 @@ driver_machine(void* arg) {
   monitorConn_t* mconn = arg;
   spe_conn_t* conn = mconn->conn;
   if (conn->Closed || conn->Error) {
-    spe_conn_destroy(conn);
+    SpeConnDestroy(conn);
     free(mconn);
     return;
   }

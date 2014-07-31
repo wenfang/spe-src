@@ -21,13 +21,13 @@ drive_machine(void* arg) {
   if (rds->red && rds->red->Error && rds->status != RDS_CLOSE) {
     rds->status = RDS_CLOSE;
     spe_conn_writes(rds->conn, "ERROR GET DATA\r\n");
-    spe_conn_flush(rds->conn);
+    SpeConnFlush(rds->conn);
     return;
   }
   switch (rds->status) {
     case RDS_INIT:
       if (rds->conn->Error || rds->conn->Closed) {
-        spe_conn_destroy(rds->conn);
+        SpeConnDestroy(rds->conn);
         free(rds);
         return;
       }
@@ -35,7 +35,7 @@ drive_machine(void* arg) {
       if (!rds->red) {
         rds->status = RDS_CLOSE;
         spe_conn_writes(rds->conn, "ERROR CREATE REDIS CLIENT\r\n");
-        spe_conn_flush(rds->conn);
+        SpeConnFlush(rds->conn);
         return;
       }
       rds->status = RDS_GET;
@@ -50,28 +50,22 @@ drive_machine(void* arg) {
       free(msg);
       cJSON_Delete(obj);
       rds->status = RDS_CLOSE;
-      spe_conn_flush(rds->conn);
+      SpeConnFlush(rds->conn);
       break;
     case RDS_CLOSE:
       if (rds->red) SpeRedisPoolPut(pool, rds->red);
-      spe_conn_destroy(rds->conn);
+      SpeConnDestroy(rds->conn);
       free(rds);
       break;
   }
 }
 
 static void
-run(unsigned cfd) {
-  spe_conn_t* conn = spe_conn_create(cfd);
-  if (!conn) {
-    SPE_LOG_ERR("spe_conn_create error");
-    spe_sock_close(cfd);
-    return;
-  }
+run(spe_conn_t* conn) {
   spe_rds_t* rds = calloc(1, sizeof(spe_rds_t));
   if (!rds) {
     SPE_LOG_ERR("calloc error");
-    spe_sock_close(cfd);
+    SpeConnDestroy(conn);
     return;
   }
   rds->conn = conn;

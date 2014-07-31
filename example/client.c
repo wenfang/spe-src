@@ -9,14 +9,14 @@ on_conn(spe_conn_t* conn) {
   if (conn->Error) {
     printf("Connect Error\n");
   }
-  spe_conn_destroy(conn);
-  g_stop = true;
+  SpeConnDestroy(conn);
+  GStop = true;
 }
 
 bool
 mod_init(void) {
   int cfd = spe_sock_tcp_socket();
-  spe_conn_t *conn = spe_conn_create(cfd);
+  spe_conn_t *conn = SpeConnCreate(cfd);
   conn->ReadCallback.Handler = SPE_HANDLER1(on_conn, conn);
   spe_conn_connect(conn, "127.0.0.1", "8080");
   return true;

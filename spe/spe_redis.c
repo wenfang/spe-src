@@ -50,7 +50,7 @@ speRedisDestroy(SpeRedis_t* sr) {
   ASSERT(sr);
   spe_slist_destroy(sr->Buffer);
   spe_slist_destroy(sr->sendBuffer);
-  if (sr->conn) spe_conn_destroy(sr->conn);
+  if (sr->conn) SpeConnDestroy(sr->conn);
   free(sr);
 }
 
@@ -89,7 +89,7 @@ driver_machine
 static void 
 driver_machine(SpeRedis_t* sr) {
   if (sr->status != SPE_REDIS_INIT && (sr->conn->Error || sr->conn->Closed)) {
-    spe_conn_destroy(sr->conn);
+    SpeConnDestroy(sr->conn);
     sr->conn    = NULL;
     sr->status  = SPE_REDIS_INIT;
     sr->Error   = 1;
@@ -130,7 +130,7 @@ driver_machine(SpeRedis_t* sr) {
         spe_conn_writes(sr->conn, buf);
       }
       sr->status = SPE_REDIS_SEND;
-      spe_conn_flush(sr->conn);
+      SpeConnFlush(sr->conn);
       break;
     case SPE_REDIS_SEND:
       sr->status = SPE_REDIS_RECV_HEAD;

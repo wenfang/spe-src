@@ -15,7 +15,7 @@ driver_machine(void* arg) {
   pf_conn_t* pf_conn = arg;
   spe_conn_t* conn = pf_conn->conn;
   if (conn->Closed || conn->Error) {
-    spe_conn_destroy(conn);
+    SpeConnDestroy(conn);
     free(pf_conn);
     return;
   }
@@ -31,10 +31,10 @@ driver_machine(void* arg) {
       spe_conn_writes(conn, msg);
       free(msg);
       cJSON_Delete(obj);
-      spe_conn_flush(conn);
+      SpeConnFlush(conn);
       break;
     case PF_END:
-      spe_conn_destroy(conn);
+      SpeConnDestroy(conn);
       free(pf_conn);
       break;
   }
@@ -44,7 +44,7 @@ static void
 run(spe_conn_t* conn) {
   pf_conn_t* pf_conn = calloc(1, sizeof(pf_conn_t));
   if (!pf_conn) {
-    spe_conn_destroy(conn);
+    SpeConnDestroy(conn);
     return;
   }
   conn->ReadCallback.Handler  = SPE_HANDLER1(driver_machine, pf_conn);
