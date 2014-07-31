@@ -100,7 +100,7 @@ SpeMonitorInit
 ===================================================================================================
 */
 bool
-SpeMonitorInit(const char* addr, int port) {
+speMonitorInit(const char* addr, int port) {
   if (gMonitor) return false;
   int mfd = spe_sock_tcp_server(addr, port);
   if (mfd < 0) {
@@ -126,7 +126,7 @@ SpeMonitorDeInit
 ===================================================================================================
 */
 void
-SpeMonitorDeinit() {
+speMonitorDeinit() {
   if (!gMonitor) return;
   spe_sock_close(gMonitor->mfd);
   free(gMonitor);

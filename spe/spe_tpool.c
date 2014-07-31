@@ -142,6 +142,7 @@ SpeTpoolInit
 */
 extern bool
 SpeTpoolInit() {
+  if (gTpool) return false;
   gTpool = calloc(1, sizeof(spe_tpool_t));
   if (!gTpool) {
     SPE_LOG_ERR("tpool calloc error");

@@ -29,12 +29,12 @@ SpeProcs(int procs) {
 int 
 main(int argc, char* argv[]) {
   if (argc > 2) {
-    printf("Usage: %s [conf_file]\n", argv[0]);
+    printf("Usage: %s [config file]\n", argv[0]);
     return 1;
   }
   // parse config file
   if ((argc==2) && !speOptCreate(argv[1])) {
-    fprintf(stderr, "[ERROR] Parse File %s Error ...\n", argv[1]);
+    fprintf(stderr, "[ERROR] %s Parse Error\n", argv[1]);
     return 1;
   }
   // set max open files
@@ -45,9 +45,22 @@ main(int argc, char* argv[]) {
   speSignalInit();
   SpeSignalRegister(SIGPIPE, SIG_IGN);
   SpeSignalRegister(SIGHUP, SIG_IGN);
+  // init server and monitor
+  const char* ServerAddr = SpeOptString("main", "ServerAddr", "0.0.0.0");
+  int ServerPort = SpeOptInt("main", "ServerPort", 0);
+  if (ServerPort && !speServerInit(ServerAddr, ServerPort)) {
+    fprintf(stderr, "[ERROR] speServerInit Error\n");
+    return 1;
+  }
+  const char* MonitorAddr = SpeOptString("main", "MonitorAddr", "0.0.0.0");
+  int MonitorPort = SpeOptInt("main", "MonitorPort", 0);
+  if (MonitorPort && !speMonitorInit(MonitorAddr, MonitorPort)) {
+    fprintf(stderr, "[ERROR] speMonitorInit Error\n");
+    return 1;
+  }
   // call mod_init
   if (!mod_init()) {
-    fprintf(stderr, "[ERROR] mod_init...\n");
+    fprintf(stderr, "[ERROR] mod_init Error\n");
     return 1;
   }
   speServerStart();
@@ -63,9 +76,11 @@ main(int argc, char* argv[]) {
     speSignalProcess();
   }
   if (!mod_exit()) {
-    fprintf(stderr, "[ERROR] mod_exit...\n");
+    fprintf(stderr, "[ERROR] mod_exit Error\n");
     return 1;
   }
+  speServerDeinit();
+  speMonitorDeinit();
   speOptDestroy();
   return 0;
 }

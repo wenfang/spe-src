@@ -7,9 +7,9 @@ extern void
 speMonitorStart();
 
 extern bool
-SpeMonitorInit(const char* addr, int port);
+speMonitorInit(const char* addr, int port);
 
 extern void
-SpeMonitorDeinit();
+speMonitorDeinit();
 
 #endif

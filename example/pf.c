@@ -56,23 +56,22 @@ run(spe_conn_t* conn) {
 
 bool
 mod_init(void) {
-  int port = SpeOptInt("pf_base", "port", 7879);
+  /*
   int procs = SpeOptInt("pf_base", "procs", 4);
-  if (!SpeServerInit("0.0.0.0", port, run)) {
-    fprintf(stderr, "SpeServerInit Error\n");
-    return false;
-  }
-  if (!SpeMonitorInit("127.0.0.1", 7880)) {
-    fprintf(stderr, "SpeMonitorInit Error\n");
-    return false;
-  }
   SpeProcs(procs);
+  SpeTpoolInit();
+  */
+  if (!SpeServerSetHandler(run)) {
+    fprintf(stderr, "SpeServerSetHandler Error\n");
+    return false;
+  }
   return true;
 }
 
 bool
 mod_exit(void) {
-  SpeMonitorDeinit();
-  SpeServerDeinit();
+  /*
+  SpeTpoolDeinit();
+  */
   return true;
 }
