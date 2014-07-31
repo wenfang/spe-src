@@ -41,12 +41,7 @@ driver_machine(void* arg) {
 }
 
 static void
-run(unsigned cfd) {
-  spe_conn_t* conn = spe_conn_create(cfd);
-  if (!conn) {
-    spe_sock_close(cfd);
-    return;
-  }
+run(spe_conn_t* conn) {
   pf_conn_t* pf_conn = calloc(1, sizeof(pf_conn_t));
   if (!pf_conn) {
     spe_conn_destroy(conn);

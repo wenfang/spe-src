@@ -1,9 +1,10 @@
 #ifndef __SPE_SERVER_H
 #define __SPE_SERVER_H
 
+#include "spe_conn.h"
 #include <stdbool.h>
 
-typedef void (*speServerHandler)(unsigned);
+typedef void (*speServerHandler)(spe_conn_t*);
 
 extern bool
 speServerUseAcceptMutex();

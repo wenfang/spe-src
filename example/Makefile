@@ -3,7 +3,8 @@ INCLUDE=../spe
 BINS=pf iot rds_server rds_client client threadtest
 
 $(BINS):%:%.c
-	gcc -DDEBUG -pg -g -fPIC -std=gnu99 -lpthread -lm -Wall -I$(INCLUDE) $< $(BUILD)/libspe.a -o $@
+	#gcc -DDEBUG -pg -g -fPIC -std=gnu99 -lpthread -lm -Wall -I$(INCLUDE) $< $(BUILD)/libspe.a -o $@
+	gcc -O2 -fPIC -std=gnu99 -lpthread -lm -Wall -I$(INCLUDE) $< $(BUILD)/libspe.a -o $@
 
 clean:
 	rm -rf $(BINS)

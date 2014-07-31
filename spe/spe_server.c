@@ -33,7 +33,13 @@ serverAccept() {
     spe_sock_close(cfd);
     return;
   }
-  gServer->handler(cfd);
+  spe_conn_t* conn = SpeConnCreate(cfd);
+  if (!conn) {
+    SPE_LOG_ERR("speConnCreate Error");
+    spe_sock_close(cfd);
+    return;
+  }
+  gServer->handler(conn);
 }
 
 /*
