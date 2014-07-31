@@ -77,19 +77,20 @@ run(spe_conn_t* conn) {
 
 bool
 mod_init(void) {
+  if (!SpeServerSetHandler(run)) {
+    fprintf(stderr, "SpeServerSetHandler Error\n");
+    return false;
+  }
   pool = SpeRedisPoolCreate("127.0.0.1", "6379", 128);
   if (!pool) {
     fprintf(stderr, "redis pool create error\n");
     return false;
   }
-  int port = SpeOptInt("rdspool", "port", 7879);
-  SpeServerInit("127.0.0.1", port, run);
   return true;
 }
 
 bool
 mod_exit(void) {
-  SpeServerDeinit();
   SpeRedisPoolDestroy(pool);
   return true;
 }

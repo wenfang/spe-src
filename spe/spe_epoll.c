@@ -133,7 +133,7 @@ spe_epoll_init(void) {
   epfd = epoll_create(1024);
   // create eventfd
   epoll_eventfd = eventfd(0, 0);
-  spe_sock_set_block(epoll_eventfd, 0);
+  SpeSockSetBlock(epoll_eventfd, 0);
   // set eventfd
   struct epoll_event ee;
   ee.data.u64 = 0;

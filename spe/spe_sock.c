@@ -112,12 +112,12 @@ spe_sock_accept_timeout(int sfd, int timeout) {
 
 /*
 ===================================================================================================
-spe_sock_set_block
+SpeSockSetBlock
     set socket to block
 ===================================================================================================
 */
 bool 
-spe_sock_set_block(int fd, int block) {
+SpeSockSetBlock(int fd, int block) {
   int flags;
   if ((flags = fcntl(fd, F_GETFL, 0)) < 0) return false;
   // set new flags;

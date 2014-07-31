@@ -13,7 +13,7 @@ extern int
 spe_sock_accept_timeout(int fd, int timeout);
 
 extern bool 
-spe_sock_set_block(int fd, int block);
+SpeSockSetBlock(int fd, int block);
 
 extern int  
 SpeSockTcpServer(const char* addr, int port);

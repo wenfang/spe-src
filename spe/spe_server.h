@@ -19,12 +19,9 @@ extern void
 speServerAfterLoop();
 
 extern bool
-speServerInit(const char* addr, int port);
+SpeServerInit(const char* addr, int port, speServerHandler handler);
 
 extern void
-speServerDeinit();
-
-extern bool
-SpeServerSetHandler(speServerHandler handler);
+SpeServerDeinit();
 
 #endif

@@ -51,17 +51,12 @@ run(spe_conn_t* conn) {
   conn->WriteCallback.Handler = SPE_HANDLER1(driver_machine, pf_conn);
   pf_conn->conn   = conn;
   pf_conn->status = PF_INIT;
-  spe_conn_readuntil(pf_conn->conn, "\r\n\r\n");
+  SpeConnReaduntil(pf_conn->conn, "\r\n\r\n");
 }
 
 bool
 mod_init(void) {
-  /*
-  int procs = SpeOptInt("pf_base", "procs", 4);
-  SpeProcs(procs);
-  SpeTpoolInit();
-  */
-  if (!SpeServerSetHandler(run)) {
+  if (!SpeServerInit("127.0.0.1", 7879, run)) {
     fprintf(stderr, "SpeServerSetHandler Error\n");
     return false;
   }
@@ -70,8 +65,6 @@ mod_init(void) {
 
 bool
 mod_exit(void) {
-  /*
-  SpeTpoolDeinit();
-  */
+  SpeServerDeinit();
   return true;
 }

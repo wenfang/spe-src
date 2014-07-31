@@ -119,7 +119,7 @@ driver_machine(SpeRedis_t* sr) {
       sr->status  = SPE_REDIS_CONN;
       sr->conn->ReadCallback.Handler  = SPE_HANDLER1(driver_machine, sr);
       sr->conn->WriteCallback.Handler = SPE_HANDLER1(driver_machine, sr);
-      spe_conn_connect(sr->conn, sr->host, sr->port);
+      SpeConnConnect(sr->conn, sr->host, sr->port);
       break;
     case SPE_REDIS_CONN:
       // send request
@@ -134,7 +134,7 @@ driver_machine(SpeRedis_t* sr) {
       break;
     case SPE_REDIS_SEND:
       sr->status = SPE_REDIS_RECV_HEAD;
-      spe_conn_readuntil(sr->conn, "\r\n");
+      SpeConnReaduntil(sr->conn, "\r\n");
       break;
     case SPE_REDIS_RECV_HEAD: // recv the first response line
       if (sr->conn->Buffer->data[0] == '+' || sr->conn->Buffer->data[0] == '-' ||
@@ -153,7 +153,7 @@ driver_machine(SpeRedis_t* sr) {
         }
         sr->blockLeft = 1;
         sr->status    = SPE_REDIS_RECV_DATA;
-        spe_conn_readbytes(sr->conn, resSize+2);
+        SpeConnReadbytes(sr->conn, resSize+2);
         return;
       }
       if (sr->conn->Buffer->data[0] == '*') {
@@ -165,7 +165,7 @@ driver_machine(SpeRedis_t* sr) {
         }
         sr->blockLeft = (unsigned)resSize;
         sr->status    = SPE_REDIS_RECV_SIZE;
-        spe_conn_readuntil(sr->conn, "\r\n");
+        SpeConnReaduntil(sr->conn, "\r\n");
         return;
       }
       break;
@@ -177,7 +177,7 @@ driver_machine(SpeRedis_t* sr) {
         return;
       }
       sr->status = SPE_REDIS_RECV_DATA;
-      spe_conn_readbytes(sr->conn, resSize+2);
+      SpeConnReadbytes(sr->conn, resSize+2);
       return;
     case SPE_REDIS_RECV_DATA:
       spe_slist_appendb(sr->Buffer, sr->conn->Buffer->data, sr->conn->Buffer->len-2);
@@ -188,7 +188,7 @@ driver_machine(SpeRedis_t* sr) {
         return;
       }
       sr->status = SPE_REDIS_RECV_SIZE;
-      spe_conn_readuntil(sr->conn, "\r\n");
+      SpeConnReaduntil(sr->conn, "\r\n");
       break;
   }
 }

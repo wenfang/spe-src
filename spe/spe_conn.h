@@ -32,16 +32,16 @@ struct spe_conn_s {
 typedef struct spe_conn_s spe_conn_t;
 
 extern bool
-spe_conn_connect(spe_conn_t* conn, const char* addr, const char* port);
+SpeConnConnect(spe_conn_t* conn, const char* addr, const char* port);
 
 extern bool
-spe_conn_readuntil(spe_conn_t* conn, char* delim);
+SpeConnReaduntil(spe_conn_t* conn, char* delim);
 
 extern bool
-spe_conn_readbytes(spe_conn_t* conn, unsigned len);
+SpeConnReadbytes(spe_conn_t* conn, unsigned len);
 
 extern bool
-spe_conn_read(spe_conn_t* conn);
+SpeConnRead(spe_conn_t* conn);
 
 static inline bool
 spe_conn_writeb(spe_conn_t* conn, char* buf, unsigned len) {

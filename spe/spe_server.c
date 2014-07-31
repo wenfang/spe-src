@@ -101,23 +101,11 @@ speServerAfterLoop() {
 
 /*
 ===================================================================================================
-SpeServerSetHandler
-===================================================================================================
-*/
-bool
-SpeServerSetHandler(speServerHandler handler) {
-  if (!gServer) return false;
-  gServer->handler = handler;
-  return true;
-}
-
-/*
-===================================================================================================
 SpeServerInit
 ===================================================================================================
 */
 bool
-speServerInit(const char* addr, int port) {
+SpeServerInit(const char* addr, int port, speServerHandler handler) {
   if (gServer) return false;
   // create server fd
   int sfd = SpeSockTcpServer(addr, port);
@@ -125,7 +113,7 @@ speServerInit(const char* addr, int port) {
     SPE_LOG_ERR("SpeSockTcpServer error");
     return false;
   }
-  spe_sock_set_block(sfd, 0);
+  SpeSockSetBlock(sfd, 0);
   // create gServer
   gServer = calloc(1, sizeof(spe_server_t));
   if (!gServer) {
@@ -133,7 +121,8 @@ speServerInit(const char* addr, int port) {
     spe_sock_close(sfd);
     return false;
   }
-  gServer->sfd = sfd;
+  gServer->sfd      = sfd;
+  gServer->handler  = handler;
   SpeTaskInit(&gServer->listenTask);
   gServer->listenTask.Handler = SPE_HANDLER0(serverAccept);
   return true;
@@ -145,7 +134,7 @@ SpeServerDeinit
 ===================================================================================================
 */
 void
-speServerDeinit() {
+SpeServerDeinit() {
   if (!gServer) return;
   if (gServer->acceptMutex) SpeShmuxDestroy(gServer->acceptMutex);
   spe_sock_close(gServer->sfd);

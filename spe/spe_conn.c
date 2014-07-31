@@ -41,11 +41,11 @@ end_out:
 
 /*
 ===================================================================================================
-spe_conn_connect
+SpeConnConnect
 ===================================================================================================
 */
 bool
-spe_conn_connect(spe_conn_t* conn, const char* addr, const char* port) {
+SpeConnConnect(spe_conn_t* conn, const char* addr, const char* port) {
   ASSERT(conn && conn->readType == SPE_CONN_READNONE && conn->writeType == SPE_CONN_WRITENONE && 
       addr && port);
   // gen address hints
@@ -147,11 +147,11 @@ end_out:
 
 /*
 ===================================================================================================
-spe_conn_read_until
+SpeConnRead_until
 ===================================================================================================
 */
 bool
-spe_conn_readuntil(spe_conn_t* conn, char* delim) {
+SpeConnReaduntil(spe_conn_t* conn, char* delim) {
   ASSERT(conn && conn->readType == SPE_CONN_READNONE);
   if (!delim || conn->Closed || conn->Error) return false;
   // (sync):
@@ -175,11 +175,11 @@ spe_conn_readuntil(spe_conn_t* conn, char* delim) {
 
 /*
 ===================================================================================================
-spe_conn_readbytes
+SpeConnReadbytes
 ===================================================================================================
 */
 bool
-spe_conn_readbytes(spe_conn_t* conn, unsigned len) {
+SpeConnReadbytes(spe_conn_t* conn, unsigned len) {
   ASSERT(conn && conn->readType == SPE_CONN_READNONE);
   if (len == 0 || conn->Closed || conn->Error ) return false;
   // (sync):
@@ -202,11 +202,11 @@ spe_conn_readbytes(spe_conn_t* conn, unsigned len) {
 
 /*
 ===================================================================================================
-spe_conn_read
+SpeConnRead
 ===================================================================================================
 */
 bool
-spe_conn_read(spe_conn_t* conn) {
+SpeConnRead(spe_conn_t* conn) {
   ASSERT(conn && conn->readType == SPE_CONN_READNONE);
   if (conn->Closed || conn->Error) return false;
   // (sync):
@@ -327,7 +327,7 @@ SpeConnCreate
 spe_conn_t*
 SpeConnCreate(unsigned fd) {
   if (unlikely(fd >= MAX_FD)) return NULL;
-  spe_sock_set_block(fd, 0);
+  SpeSockSetBlock(fd, 0);
   spe_conn_t* conn = &all_conn[fd];
   if (conn->fd == 0 && !connInit(conn, fd)) {
     SPE_LOG_ERR("connInit error");

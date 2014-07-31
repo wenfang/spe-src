@@ -52,7 +52,7 @@ driver_machine(void* arg) {
       break;
     case MONITOR_RESULT:
       mconn->status = MONITOR_WAITCMD;
-      spe_conn_readuntil(conn, "\r\n");
+      SpeConnReaduntil(conn, "\r\n");
       break;
   }
 }
@@ -80,7 +80,7 @@ monitorAccept() {
   mconn->conn->ReadCallback.Handler = SPE_HANDLER1(driver_machine, mconn);
   mconn->conn->WriteCallback.Handler = SPE_HANDLER1(driver_machine, mconn);
   mconn->status = MONITOR_WAITCMD;
-  spe_conn_readuntil(mconn->conn, "\r\n");
+  SpeConnReaduntil(mconn->conn, "\r\n");
 }
 
 /*
@@ -107,7 +107,7 @@ speMonitorInit(const char* addr, int port) {
     SPE_LOG_ERR("SpeSockTcpServer error");
     return false;
   }
-  spe_sock_set_block(mfd, 0);
+  SpeSockSetBlock(mfd, 0);
   gMonitor = calloc(1, sizeof(speMonitor_t));
   if (!gMonitor) {
     SPE_LOG_ERR("monitor struct alloc error");
