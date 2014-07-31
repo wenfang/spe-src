@@ -102,9 +102,9 @@ SpeMonitorInit
 bool
 speMonitorInit(const char* addr, int port) {
   if (gMonitor) return false;
-  int mfd = spe_sock_tcp_server(addr, port);
+  int mfd = SpeSockTcpServer(addr, port);
   if (mfd < 0) {
-    SPE_LOG_ERR("spe_sock_tcp_server error");
+    SPE_LOG_ERR("SpeSockTcpServer error");
     return false;
   }
   spe_sock_set_block(mfd, 0);

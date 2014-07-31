@@ -16,7 +16,7 @@ extern bool
 spe_sock_set_block(int fd, int block);
 
 extern int  
-spe_sock_tcp_server(const char* addr, int port);
+SpeSockTcpServer(const char* addr, int port);
 
 static inline int 
 spe_sock_tcp_socket() {

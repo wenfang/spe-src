@@ -31,12 +31,12 @@ sock_addr_valid(const char* addr) {
 
 /*
 ===================================================================================================
-spe_sock_tcp_server
+SpeSockTcpServer
     create tcpserver and listen 
 ===================================================================================================
 */
 int 
-spe_sock_tcp_server(const char* addr, int port) {
+SpeSockTcpServer(const char* addr, int port) {
   int sfd;
   if ((sfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) return -1;
   //set socket option

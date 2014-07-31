@@ -120,9 +120,9 @@ bool
 speServerInit(const char* addr, int port) {
   if (gServer) return false;
   // create server fd
-  int sfd = spe_sock_tcp_server(addr, port);
+  int sfd = SpeSockTcpServer(addr, port);
   if (sfd < 0) {
-    SPE_LOG_ERR("spe_sock_tcp_server error");
+    SPE_LOG_ERR("SpeSockTcpServer error");
     return false;
   }
   spe_sock_set_block(sfd, 0);
@@ -133,7 +133,7 @@ speServerInit(const char* addr, int port) {
     spe_sock_close(sfd);
     return false;
   }
-  gServer->sfd     = sfd;
+  gServer->sfd = sfd;
   SpeTaskInit(&gServer->listenTask);
   gServer->listenTask.Handler = SPE_HANDLER0(serverAccept);
   return true;
