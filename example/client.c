@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 static void
-on_conn(spe_conn_t* conn) {
+on_conn(SpeConn_t* conn) {
   if (conn->ConnectTimeout) {
     printf("Connect Timeout\n");
   }
@@ -16,9 +16,9 @@ on_conn(spe_conn_t* conn) {
 bool
 mod_init(void) {
   int cfd = spe_sock_tcp_socket();
-  spe_conn_t *conn = SpeConnCreate(cfd);
+  SpeConn_t *conn = SpeConnCreate(cfd);
   conn->ReadCallback.Handler = SPE_HANDLER1(on_conn, conn);
-  spe_conn_connect(conn, "127.0.0.1", "8080");
+  SpeConnConnect(conn, "127.0.0.1", "8080");
   return true;
 }
 

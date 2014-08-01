@@ -8,7 +8,7 @@ static SpeRedisPool_t* pool;
 #define RDS_CLOSE 2
 
 struct spe_rds_s {
-  spe_conn_t* conn;
+  SpeConn_t* conn;
   SpeRedis_t* red;
   unsigned    status;
 };
@@ -20,7 +20,7 @@ drive_machine(void* arg) {
   cJSON *obj;
   if (rds->red && rds->red->Error && rds->status != RDS_CLOSE) {
     rds->status = RDS_CLOSE;
-    spe_conn_writes(rds->conn, "ERROR GET DATA\r\n");
+    SpeConnWrites(rds->conn, "ERROR GET DATA\r\n");
     SpeConnFlush(rds->conn);
     return;
   }
@@ -34,7 +34,7 @@ drive_machine(void* arg) {
       rds->red = SpeRedisPoolGet(pool);
       if (!rds->red) {
         rds->status = RDS_CLOSE;
-        spe_conn_writes(rds->conn, "ERROR CREATE REDIS CLIENT\r\n");
+        SpeConnWrites(rds->conn, "ERROR CREATE REDIS CLIENT\r\n");
         SpeConnFlush(rds->conn);
         return;
       }
@@ -46,7 +46,7 @@ drive_machine(void* arg) {
       cJSON_AddNumberToObject(obj, "res", 0);
       cJSON_AddStringToObject(obj, "msg", rds->red->Buffer->data[0]->data);
       char* msg = cJSON_PrintUnformatted(obj);
-      spe_conn_writes(rds->conn, msg);
+      SpeConnWrites(rds->conn, msg);
       free(msg);
       cJSON_Delete(obj);
       rds->status = RDS_CLOSE;
@@ -61,7 +61,7 @@ drive_machine(void* arg) {
 }
 
 static void
-run(spe_conn_t* conn) {
+run(SpeConn_t* conn) {
   spe_rds_t* rds = calloc(1, sizeof(spe_rds_t));
   if (!rds) {
     SPE_LOG_ERR("calloc error");
@@ -72,12 +72,12 @@ run(spe_conn_t* conn) {
   rds->status = RDS_INIT;
   rds->conn->ReadCallback.Handler   = SPE_HANDLER1(drive_machine, rds);
   rds->conn->WriteCallback.Handler  = SPE_HANDLER1(drive_machine, rds);
-  spe_conn_readuntil(rds->conn, "\r\n\r\n");
+  SpeConnReaduntil(rds->conn, "\r\n\r\n");
 }
 
 bool
 mod_init(void) {
-  if (!SpeServerSetHandler(run)) {
+  if (!SpeServerInit("127.0.0.1", 7879, run)) {
     fprintf(stderr, "SpeServerSetHandler Error\n");
     return false;
   }
@@ -91,6 +91,7 @@ mod_init(void) {
 
 bool
 mod_exit(void) {
+  SpeServerDeinit();
   SpeRedisPoolDestroy(pool);
   return true;
 }
