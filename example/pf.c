@@ -19,6 +19,12 @@ driver_machine(void* arg) {
     free(pf_conn);
     return;
   }
+  if (conn->ReadTimeout && pf_conn->status == PF_INIT) {
+    SpeConnWrites(conn, "Timeout! Bye!!\r\n");
+    pf_conn->status = PF_END;
+    SpeConnFlush(conn);
+    return;
+  }
 
   cJSON *obj;
   switch (pf_conn->status) {
@@ -43,6 +49,8 @@ driver_machine(void* arg) {
 
 static void
 run(SpeConn_t* conn) {
+  ASSERT(conn);
+  SpeConnSetTimeout(conn, 3000, 3000);
   pf_conn_t* pf_conn = calloc(1, sizeof(pf_conn_t));
   if (!pf_conn) {
     SpeConnDestroy(conn);

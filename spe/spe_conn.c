@@ -284,11 +284,11 @@ SpeConnFlush(SpeConn_t* conn) {
 
 /*
 ===================================================================================================
-spe_conn_set_timeout
+SpeConnSetTimeout
 ===================================================================================================
 */
 bool
-spe_conn_set_timeout(SpeConn_t* conn, unsigned readExpireTime, unsigned writeExpireTime) {
+SpeConnSetTimeout(SpeConn_t* conn, unsigned readExpireTime, unsigned writeExpireTime) {
   ASSERT(conn);
   conn->readExpireTime  = readExpireTime;
   conn->writeExpireTime = writeExpireTime;

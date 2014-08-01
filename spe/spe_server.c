@@ -10,24 +10,21 @@
 #include <string.h>
 #include <errno.h>
 
-struct spe_server_s {
+struct speServer_s {
   unsigned          sfd;
   SpeServerHandler  handler;
   SpeTask_t         listenTask;
   pthread_mutex_t*  acceptMutex;
   unsigned          acceptMutexHold;
 };
-typedef struct spe_server_s spe_server_t;
+typedef struct speServer_s speServer_t;
 
-static spe_server_t* gServer;
+static speServer_t* gServer;
 
 static void
 serverAccept() {
   int cfd = spe_sock_accept(gServer->sfd);
-  if (cfd <= 0) {
-    SPE_LOG_ERR("spe_sock_accept error");
-    return;
-  }
+  if (cfd <= 0) return;
   if (!gServer->handler) {
     SPE_LOG_ERR("gServer no handler set");
     SpeSockClose(cfd);
@@ -35,7 +32,7 @@ serverAccept() {
   }
   SpeConn_t* conn = SpeConnCreate(cfd);
   if (!conn) {
-    SPE_LOG_ERR("speConnCreate Error");
+    SPE_LOG_ERR("SpeConnCreate Error");
     SpeSockClose(cfd);
     return;
   }
@@ -115,7 +112,7 @@ SpeServerInit(const char* addr, int port, SpeServerHandler handler) {
   }
   SpeSockSetBlock(sfd, 0);
   // create gServer
-  gServer = calloc(1, sizeof(spe_server_t));
+  gServer = calloc(1, sizeof(speServer_t));
   if (!gServer) {
     SPE_LOG_ERR("server struct alloc error");
     SpeSockClose(sfd);

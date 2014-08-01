@@ -68,7 +68,7 @@ extern bool
 SpeConnFlush(SpeConn_t* conn);
 
 extern bool
-spe_conn_set_timeout(SpeConn_t* conn, unsigned readExpireTime, unsigned writeExpireTime);
+SpeConnSetTimeout(SpeConn_t* conn, unsigned readExpireTime, unsigned writeExpireTime);
 
 extern SpeConn_t*
 SpeConnCreate(unsigned fd);
