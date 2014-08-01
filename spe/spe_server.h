@@ -4,7 +4,7 @@
 #include "spe_conn.h"
 #include <stdbool.h>
 
-typedef void (*SpeServerHandler)(spe_conn_t*);
+typedef void (*SpeServerHandler)(SpeConn_t*);
 
 extern bool
 serverUseAcceptMutex();

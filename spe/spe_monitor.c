@@ -18,14 +18,14 @@ static speMonitor_t* gMonitor;
 #define MONITOR_RESULT  2
 
 struct monitorConn_s {
-  spe_conn_t* conn;
+  SpeConn_t*  conn;
   unsigned    status;
 };
 typedef struct monitorConn_s monitorConn_t;
 
 static void
 processCmd(monitorConn_t* mconn) {
-  spe_conn_t* conn = mconn->conn;
+  SpeConn_t* conn = mconn->conn;
   if (!strncasecmp(conn->Buffer->data, "quit", 4)) {
     SpeConnDestroy(conn);
     free(mconn);
@@ -38,7 +38,7 @@ processCmd(monitorConn_t* mconn) {
 static void
 driver_machine(void* arg) {
   monitorConn_t* mconn = arg;
-  spe_conn_t* conn = mconn->conn;
+  SpeConn_t* conn = mconn->conn;
   if (conn->Closed || conn->Error) {
     SpeConnDestroy(conn);
     free(mconn);

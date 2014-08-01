@@ -122,6 +122,7 @@ SpeThreadTaskEnqueue
 bool
 SpeThreadTaskEnqueue(SpeTask_t* task) {
   ASSERT(task);
+  // double check
   if (task->status != SPE_TASK_FREE) return false;
   pthread_mutex_lock(&threadTask_lock);
   if (task->status != SPE_TASK_FREE) {
@@ -159,11 +160,11 @@ SpeThreadTaskDequeue(SpeTask_t* task) {
 
 /*
 ===================================================================================================
-speTaskProcess
+taskProcess
 ===================================================================================================
 */
 void
-speTaskProcess() {
+taskProcess(void) {
   // check timer queue
   if (!RB_EMPTY_ROOT(&timer_head)) {
     unsigned long curr_time = spe_current_time();

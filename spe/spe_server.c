@@ -33,7 +33,7 @@ serverAccept() {
     SpeSockClose(cfd);
     return;
   }
-  spe_conn_t* conn = SpeConnCreate(cfd);
+  SpeConn_t* conn = SpeConnCreate(cfd);
   if (!conn) {
     SPE_LOG_ERR("speConnCreate Error");
     SpeSockClose(cfd);

@@ -6,7 +6,7 @@
 #include "spe_string.h"
 
 struct SpeRedis_s {
-  spe_conn_t*   conn;
+  SpeConn_t*    conn;
   const char*   host;
   const char*   port;
   spe_handler_t handler;

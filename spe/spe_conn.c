@@ -17,11 +17,11 @@
 
 #define SPE_CONN_CONNECT    1
 
-static spe_conn_t all_conn[MAX_FD];
+static SpeConn_t all_conn[MAX_FD];
 
 static void
 connectNormal(void* arg) {
-  spe_conn_t* conn = arg;
+  SpeConn_t* conn = arg;
   // connect timeout
   if (conn->readExpireTime && conn->readTask.Timeout) {
     conn->ConnectTimeout = 1;
@@ -45,7 +45,7 @@ SpeConnConnect
 ===================================================================================================
 */
 bool
-SpeConnConnect(spe_conn_t* conn, const char* addr, const char* port) {
+SpeConnConnect(SpeConn_t* conn, const char* addr, const char* port) {
   ASSERT(conn && conn->readType == SPE_CONN_READNONE && conn->writeType == SPE_CONN_WRITENONE && 
       addr && port);
   // gen address hints
@@ -86,7 +86,7 @@ readNormal
 */
 static void
 readNormal(void* arg) {
-  spe_conn_t* conn = arg;
+  SpeConn_t* conn = arg;
   // check timeout
   if (conn->readExpireTime && conn->readTask.Timeout) {
     conn->ReadTimeout = 1;
@@ -151,7 +151,7 @@ SpeConnRead_until
 ===================================================================================================
 */
 bool
-SpeConnReaduntil(spe_conn_t* conn, char* delim) {
+SpeConnReaduntil(SpeConn_t* conn, char* delim) {
   ASSERT(conn && conn->readType == SPE_CONN_READNONE);
   if (!delim || conn->Closed || conn->Error) return false;
   // (sync):
@@ -179,7 +179,7 @@ SpeConnReadbytes
 ===================================================================================================
 */
 bool
-SpeConnReadbytes(spe_conn_t* conn, unsigned len) {
+SpeConnReadbytes(SpeConn_t* conn, unsigned len) {
   ASSERT(conn && conn->readType == SPE_CONN_READNONE);
   if (len == 0 || conn->Closed || conn->Error ) return false;
   // (sync):
@@ -206,7 +206,7 @@ SpeConnRead
 ===================================================================================================
 */
 bool
-SpeConnRead(spe_conn_t* conn) {
+SpeConnRead(SpeConn_t* conn) {
   ASSERT(conn && conn->readType == SPE_CONN_READNONE);
   if (conn->Closed || conn->Error) return false;
   // (sync):
@@ -233,7 +233,7 @@ writeNormal
 */
 static void
 writeNormal(void* arg) {
-  spe_conn_t* conn = arg;
+  SpeConn_t* conn = arg;
   // check timeout
   if (conn->writeExpireTime && conn->writeTask.Timeout) {
     conn->WriteTimeout = 1;
@@ -267,7 +267,7 @@ SpeConnFlush
 ===================================================================================================
 */
 bool
-SpeConnFlush(spe_conn_t* conn) {
+SpeConnFlush(SpeConn_t* conn) {
   ASSERT(conn && conn->writeType == SPE_CONN_WRITENONE);
   if (conn->Closed || conn->Error) return false;
   if (conn->writeBuffer->len == 0) {
@@ -288,7 +288,7 @@ spe_conn_set_timeout
 ===================================================================================================
 */
 bool
-spe_conn_set_timeout(spe_conn_t* conn, unsigned readExpireTime, unsigned writeExpireTime) {
+spe_conn_set_timeout(SpeConn_t* conn, unsigned readExpireTime, unsigned writeExpireTime) {
   ASSERT(conn);
   conn->readExpireTime  = readExpireTime;
   conn->writeExpireTime = writeExpireTime;
@@ -301,7 +301,7 @@ connInit
 ===================================================================================================
 */
 static bool
-connInit(spe_conn_t* conn, unsigned fd) {
+connInit(SpeConn_t* conn, unsigned fd) {
   conn->fd = fd;
   SpeTaskInit(&conn->readTask);
   SpeTaskInit(&conn->writeTask);
@@ -324,11 +324,11 @@ connInit(spe_conn_t* conn, unsigned fd) {
 SpeConnCreate
 ===================================================================================================
 */
-spe_conn_t*
+SpeConn_t*
 SpeConnCreate(unsigned fd) {
   if (unlikely(fd >= MAX_FD)) return NULL;
   SpeSockSetBlock(fd, 0);
-  spe_conn_t* conn = &all_conn[fd];
+  SpeConn_t* conn = &all_conn[fd];
   if (conn->fd == 0 && !connInit(conn, fd)) {
     SPE_LOG_ERR("connInit error");
     return NULL;
@@ -352,7 +352,7 @@ SpeConnDestroy
 ===================================================================================================
 */
 void
-SpeConnDestroy(spe_conn_t* conn) {
+SpeConnDestroy(SpeConn_t* conn) {
   ASSERT(conn);
   SpeTaskDequeue(&conn->readTask);
   SpeTaskDequeue(&conn->writeTask);

@@ -41,6 +41,6 @@ extern bool
 SpeThreadTaskDequeue(SpeTask_t* task);
 
 extern void
-speTaskProcess();
+taskProcess(void);
 
 #endif

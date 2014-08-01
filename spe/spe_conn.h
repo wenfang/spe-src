@@ -29,51 +29,51 @@ struct spe_conn_s {
   unsigned      Closed:1;
   unsigned      Error:1;
 };
-typedef struct spe_conn_s spe_conn_t;
+typedef struct spe_conn_s SpeConn_t;
 
 extern bool
-SpeConnConnect(spe_conn_t* conn, const char* addr, const char* port);
+SpeConnConnect(SpeConn_t* conn, const char* addr, const char* port);
 
 extern bool
-SpeConnReaduntil(spe_conn_t* conn, char* delim);
+SpeConnReaduntil(SpeConn_t* conn, char* delim);
 
 extern bool
-SpeConnReadbytes(spe_conn_t* conn, unsigned len);
+SpeConnReadbytes(SpeConn_t* conn, unsigned len);
 
 extern bool
-SpeConnRead(spe_conn_t* conn);
+SpeConnRead(SpeConn_t* conn);
 
 static inline bool
-SpeConnWriteb(spe_conn_t* conn, char* buf, unsigned len) {
+SpeConnWriteb(SpeConn_t* conn, char* buf, unsigned len) {
   ASSERT(conn && buf && len);
   if (conn->Closed || conn->Error) return false;
   return spe_string_catb(conn->writeBuffer, buf, len);
 }
 
 static inline bool
-SpeConnWrite(spe_conn_t* conn, spe_string_t* buf) {
+SpeConnWrite(SpeConn_t* conn, spe_string_t* buf) {
   ASSERT(conn && buf);
   if (conn->Closed || conn->Error) return false;
   return spe_string_catb(conn->writeBuffer, buf->data, buf->len);
 }
 
 static inline bool
-SpeConnWrites(spe_conn_t* conn, char* buf) {
+SpeConnWrites(SpeConn_t* conn, char* buf) {
   ASSERT(conn && buf);
   if (conn->Closed || conn->Error) return false;
   return spe_string_catb(conn->writeBuffer, buf, strlen(buf));
 }
 
 extern bool
-SpeConnFlush(spe_conn_t* conn);
+SpeConnFlush(SpeConn_t* conn);
 
 extern bool
-spe_conn_set_timeout(spe_conn_t* conn, unsigned readExpireTime, unsigned writeExpireTime);
+spe_conn_set_timeout(SpeConn_t* conn, unsigned readExpireTime, unsigned writeExpireTime);
 
-extern spe_conn_t*
+extern SpeConn_t*
 SpeConnCreate(unsigned fd);
 
 extern void
-SpeConnDestroy(spe_conn_t* conn);
+SpeConnDestroy(SpeConn_t* conn);
 
 #endif

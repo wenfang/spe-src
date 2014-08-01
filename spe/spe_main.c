@@ -59,7 +59,7 @@ main(int argc, char* argv[]) {
     serverBeforeLoop();
     epollProcess(timeout);
     serverAfterLoop();
-    speTaskProcess();
+    taskProcess();
     speSignalProcess();
   }
   if (!mod_exit()) {

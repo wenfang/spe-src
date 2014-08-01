@@ -5,7 +5,7 @@
 #define PF_END  1
 
 struct pf_conn_s {
-  spe_conn_t* conn;
+  SpeConn_t* conn;
   int         status;
 };
 typedef struct pf_conn_s pf_conn_t;
@@ -13,7 +13,7 @@ typedef struct pf_conn_s pf_conn_t;
 static void
 driver_machine(void* arg) {
   pf_conn_t* pf_conn = arg;
-  spe_conn_t* conn = pf_conn->conn;
+  SpeConn_t* conn = pf_conn->conn;
   if (conn->Closed || conn->Error) {
     SpeConnDestroy(conn);
     free(pf_conn);
@@ -26,6 +26,7 @@ driver_machine(void* arg) {
       obj = cJSON_CreateObject();
       cJSON_AddNumberToObject(obj, "res", 0);
       cJSON_AddStringToObject(obj, "msg", "OK");
+      cJSON_AddStringToObject(obj, "comment", "connect message");
       pf_conn->status = PF_END;
       char* msg = cJSON_PrintUnformatted(obj);
       SpeConnWrites(conn, msg);
@@ -41,7 +42,7 @@ driver_machine(void* arg) {
 }
 
 static void
-run(spe_conn_t* conn) {
+run(SpeConn_t* conn) {
   pf_conn_t* pf_conn = calloc(1, sizeof(pf_conn_t));
   if (!pf_conn) {
     SpeConnDestroy(conn);
