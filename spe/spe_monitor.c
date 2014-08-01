@@ -31,7 +31,7 @@ processCmd(monitorConn_t* mconn) {
     free(mconn);
     return;
   }
-  spe_conn_writes(conn, "Stat Info ~~~\r\n");
+  SpeConnWrites(conn, "Stat Info ~~~\r\n");
   SpeConnFlush(conn);
 }
 
@@ -67,14 +67,14 @@ monitorAccept() {
   monitorConn_t* mconn = calloc(1, sizeof(monitorConn_t));
   if (!mconn) {
     SPE_LOG_ERR("monitorConn_t calloc error");
-    spe_sock_close(cfd);
+    SpeSockClose(cfd);
     return;
   }
   mconn->conn = SpeConnCreate(cfd);
   if (!mconn->conn) {
     SPE_LOG_ERR("monitor SpeConnCreate error");
     free(mconn);
-    spe_sock_close(cfd);
+    SpeSockClose(cfd);
     return;
   }
   mconn->conn->ReadCallback.Handler = SPE_HANDLER1(driver_machine, mconn);
@@ -85,13 +85,13 @@ monitorAccept() {
 
 /*
 ===================================================================================================
-speMonitorStart
+monitorEnable
 ===================================================================================================
 */
 void
-speMonitorStart() {
+monitorEnable() {
   if (!gMonitor) return;
-  speEpollEnable(gMonitor->mfd, SPE_EPOLL_LISTEN, &gMonitor->monitorTask);
+  epollEnable(gMonitor->mfd, SPE_EPOLL_LISTEN, &gMonitor->monitorTask);
 }
 
 /*
@@ -100,7 +100,7 @@ SpeMonitorInit
 ===================================================================================================
 */
 bool
-speMonitorInit(const char* addr, int port) {
+SpeMonitorInit(const char* addr, int port) {
   if (gMonitor) return false;
   int mfd = SpeSockTcpServer(addr, port);
   if (mfd < 0) {
@@ -111,7 +111,7 @@ speMonitorInit(const char* addr, int port) {
   gMonitor = calloc(1, sizeof(speMonitor_t));
   if (!gMonitor) {
     SPE_LOG_ERR("monitor struct alloc error");
-    spe_sock_close(mfd);
+    SpeSockClose(mfd);
     return false;
   }
   gMonitor->mfd = mfd;
@@ -126,9 +126,9 @@ SpeMonitorDeInit
 ===================================================================================================
 */
 void
-speMonitorDeinit() {
+SpeMonitorDeinit() {
   if (!gMonitor) return;
-  spe_sock_close(gMonitor->mfd);
+  SpeSockClose(gMonitor->mfd);
   free(gMonitor);
   gMonitor = NULL;
 }

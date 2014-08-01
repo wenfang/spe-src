@@ -20,9 +20,9 @@ SpeProcs
 bool
 SpeProcs(int procs) {
   if (procs <= 1) return false;
-  if (!speServerUseAcceptMutex()) return false;
+  if (!serverUseAcceptMutex()) return false;
   spe_spawn(procs);
-  speEpollFork();
+  epollFork();
   return true;
 }
 
@@ -50,15 +50,15 @@ main(int argc, char* argv[]) {
     fprintf(stderr, "[ERROR] mod_init Error\n");
     return 1;
   }
-  speServerStart();
-  speMonitorStart();
+  serverEnable();
+  monitorEnable();
   // enter loop
   while (!GStop) {
     unsigned timeout = 300;
     if (gTaskNum || gThreadTaskNum) timeout = 0;
-    speServerBeforeLoop();
-    speEpollProcess(timeout);
-    speServerAfterLoop();
+    serverBeforeLoop();
+    epollProcess(timeout);
+    serverAfterLoop();
     speTaskProcess();
     speSignalProcess();
   }

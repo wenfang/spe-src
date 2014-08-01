@@ -10,18 +10,18 @@
 #define SPE_EPOLL_WRITE  2
 
 extern bool
-speEpollEnable(unsigned fd, unsigned mask, SpeTask_t* task);
+epollEnable(unsigned fd, unsigned mask, SpeTask_t* task);
 
 extern bool
-speEpollDisable(unsigned fd, unsigned mask);
+epollDisable(unsigned fd, unsigned mask);
 
 extern void
-speEpollProcess(int timeout);
+epollProcess(int timeout);
 
 extern void
-speEpollWakeup(void);
+epollWakeup(void);
 
 extern void
-speEpollFork();
+epollFork(void);
 
 #endif

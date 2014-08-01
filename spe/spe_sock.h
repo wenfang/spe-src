@@ -29,7 +29,7 @@ spe_sock_udp_socket() {
 }
 
 static inline int 
-spe_sock_close(int fd) {
+SpeSockClose(int fd) {
   return close(fd);
 }
 

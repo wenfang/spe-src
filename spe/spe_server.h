@@ -4,22 +4,23 @@
 #include "spe_conn.h"
 #include <stdbool.h>
 
-typedef void (*speServerHandler)(spe_conn_t*);
+typedef void (*SpeServerHandler)(spe_conn_t*);
 
 extern bool
-speServerUseAcceptMutex();
+serverUseAcceptMutex();
 
 extern void
-speServerStart();
+serverEnable();
 
 extern void
-speServerBeforeLoop();
+serverBeforeLoop();
 
 extern void
-speServerAfterLoop();
+serverAfterLoop();
 
+//*************************user use this********************************
 extern bool
-SpeServerInit(const char* addr, int port, speServerHandler handler);
+SpeServerInit(const char* addr, int port, SpeServerHandler handler);
 
 extern void
 SpeServerDeinit();

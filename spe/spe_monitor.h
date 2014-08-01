@@ -4,12 +4,12 @@
 #include <stdbool.h>
 
 extern void
-speMonitorStart();
+monitorEnable();
 
 extern bool
-speMonitorInit(const char* addr, int port);
+SpeMonitorInit(const char* addr, int port);
 
 extern void
-speMonitorDeinit();
+SpeMonitorDeinit();
 
 #endif

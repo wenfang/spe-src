@@ -61,7 +61,7 @@ SpeSockTcpServer(const char* addr, int port) {
   return sfd;
 
 error_out:
-  spe_sock_close(sfd);
+  SpeSockClose(sfd);
   return -1;
 }
 

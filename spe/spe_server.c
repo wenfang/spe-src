@@ -12,7 +12,7 @@
 
 struct spe_server_s {
   unsigned          sfd;
-  speServerHandler  handler;
+  SpeServerHandler  handler;
   SpeTask_t         listenTask;
   pthread_mutex_t*  acceptMutex;
   unsigned          acceptMutexHold;
@@ -30,13 +30,13 @@ serverAccept() {
   }
   if (!gServer->handler) {
     SPE_LOG_ERR("gServer no handler set");
-    spe_sock_close(cfd);
+    SpeSockClose(cfd);
     return;
   }
   spe_conn_t* conn = SpeConnCreate(cfd);
   if (!conn) {
     SPE_LOG_ERR("speConnCreate Error");
-    spe_sock_close(cfd);
+    SpeSockClose(cfd);
     return;
   }
   gServer->handler(conn);
@@ -44,11 +44,11 @@ serverAccept() {
 
 /*
 ===================================================================================================
-speServerUseAcceptMutex
+serverUseAcceptMutex
 ===================================================================================================
 */
 bool
-speServerUseAcceptMutex() {
+serverUseAcceptMutex() {
   if (!gServer) return false;
   if (gServer->acceptMutex) return true;
   gServer->acceptMutex = SpeShmuxCreate();
@@ -61,40 +61,40 @@ speServerUseAcceptMutex() {
 
 /*
 ===================================================================================================
-speServerStart
+serverEnable
 ===================================================================================================
 */
 void
-speServerStart() {
+serverEnable() {
   if (!gServer || gServer->acceptMutex) return;
-  speEpollEnable(gServer->sfd, SPE_EPOLL_LISTEN, &gServer->listenTask);
+  epollEnable(gServer->sfd, SPE_EPOLL_LISTEN, &gServer->listenTask);
 }
 
 /*
 ===================================================================================================
-speServerBeforeLoop
+serverBeforeLoop
 ===================================================================================================
 */
 void
-speServerBeforeLoop() {
+serverBeforeLoop() {
   if (!gServer || !gServer->acceptMutex) return;
   if (!pthread_mutex_trylock(gServer->acceptMutex)) {
     if (gServer->acceptMutexHold) return;
     gServer->acceptMutexHold = 1;
-    speEpollEnable(gServer->sfd, SPE_EPOLL_LISTEN, &gServer->listenTask);
+    epollEnable(gServer->sfd, SPE_EPOLL_LISTEN, &gServer->listenTask);
   } else {
-    if (gServer->acceptMutexHold) speEpollDisable(gServer->sfd, SPE_EPOLL_LISTEN);
+    if (gServer->acceptMutexHold) epollDisable(gServer->sfd, SPE_EPOLL_LISTEN);
     gServer->acceptMutexHold = 0;
   }
 }
 
 /*
 ===================================================================================================
-speServerAfterLoop
+serverAfterLoop
 ===================================================================================================
 */
 void
-speServerAfterLoop() {
+serverAfterLoop() {
   if (!gServer || !gServer->acceptMutex) return;
   if (gServer->acceptMutexHold) pthread_mutex_unlock(gServer->acceptMutex);
 }
@@ -105,7 +105,7 @@ SpeServerInit
 ===================================================================================================
 */
 bool
-SpeServerInit(const char* addr, int port, speServerHandler handler) {
+SpeServerInit(const char* addr, int port, SpeServerHandler handler) {
   if (gServer) return false;
   // create server fd
   int sfd = SpeSockTcpServer(addr, port);
@@ -118,7 +118,7 @@ SpeServerInit(const char* addr, int port, speServerHandler handler) {
   gServer = calloc(1, sizeof(spe_server_t));
   if (!gServer) {
     SPE_LOG_ERR("server struct alloc error");
-    spe_sock_close(sfd);
+    SpeSockClose(sfd);
     return false;
   }
   gServer->sfd      = sfd;
@@ -137,7 +137,7 @@ void
 SpeServerDeinit() {
   if (!gServer) return;
   if (gServer->acceptMutex) SpeShmuxDestroy(gServer->acceptMutex);
-  spe_sock_close(gServer->sfd);
+  SpeSockClose(gServer->sfd);
   free(gServer);
   gServer = NULL; 
 }

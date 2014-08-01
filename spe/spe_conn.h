@@ -44,21 +44,21 @@ extern bool
 SpeConnRead(spe_conn_t* conn);
 
 static inline bool
-spe_conn_writeb(spe_conn_t* conn, char* buf, unsigned len) {
+SpeConnWriteb(spe_conn_t* conn, char* buf, unsigned len) {
   ASSERT(conn && buf && len);
   if (conn->Closed || conn->Error) return false;
   return spe_string_catb(conn->writeBuffer, buf, len);
 }
 
 static inline bool
-spe_conn_write(spe_conn_t* conn, spe_string_t* buf) {
+SpeConnWrite(spe_conn_t* conn, spe_string_t* buf) {
   ASSERT(conn && buf);
   if (conn->Closed || conn->Error) return false;
   return spe_string_catb(conn->writeBuffer, buf->data, buf->len);
 }
 
 static inline bool
-spe_conn_writes(spe_conn_t* conn, char* buf) {
+SpeConnWrites(spe_conn_t* conn, char* buf) {
   ASSERT(conn && buf);
   if (conn->Closed || conn->Error) return false;
   return spe_string_catb(conn->writeBuffer, buf, strlen(buf));

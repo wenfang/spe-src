@@ -110,7 +110,7 @@ driver_machine(SpeRedis_t* sr) {
       }
       if (!(sr->conn = SpeConnCreate(cfd))) {
         SPE_LOG_ERR("SpeConnCreate error");
-        spe_sock_close(cfd);
+        SpeSockClose(cfd);
         sr->Error = 1;
         SPE_HANDLER_CALL(sr->handler);
         return;
@@ -124,10 +124,10 @@ driver_machine(SpeRedis_t* sr) {
     case SPE_REDIS_CONN:
       // send request
       sprintf(buf, "*%d\r\n", sr->sendBuffer->len);
-      spe_conn_writes(sr->conn, buf);
+      SpeConnWrites(sr->conn, buf);
       for (int i=0; i<sr->sendBuffer->len; i++) {
         sprintf(buf, "$%d\r\n%s\r\n", sr->sendBuffer->data[i]->len, sr->sendBuffer->data[i]->data);
-        spe_conn_writes(sr->conn, buf);
+        SpeConnWrites(sr->conn, buf);
       }
       sr->status = SPE_REDIS_SEND;
       SpeConnFlush(sr->conn);

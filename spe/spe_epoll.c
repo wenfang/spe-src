@@ -22,11 +22,11 @@ static spe_epoll_t  all_epoll[MAX_FD];
 
 /*
 ===================================================================================================
-epoll_change
+epollChange
 ===================================================================================================
 */
 static bool
-epoll_change(unsigned fd, spe_epoll_t* epoll_t, unsigned newmask) {
+epollChange(unsigned fd, spe_epoll_t* epoll_t, unsigned newmask) {
   if (epoll_t->mask == newmask) return true;
   // set epoll_event 
   struct epoll_event ee;
@@ -52,41 +52,41 @@ epoll_change(unsigned fd, spe_epoll_t* epoll_t, unsigned newmask) {
 
 /*
 ===================================================================================================
-speEpollEnable
+epollEnable
 ===================================================================================================
 */
 bool
-speEpollEnable(unsigned fd, unsigned mask, SpeTask_t* task) {
+epollEnable(unsigned fd, unsigned mask, SpeTask_t* task) {
   ASSERT(task);
   if (fd >= MAX_FD) return false;
   spe_epoll_t* epoll_t = &all_epoll[fd];
   if (mask & SPE_EPOLL_READ) epoll_t->readTask = task;
   if (mask & SPE_EPOLL_WRITE) epoll_t->writeTask = task;
-  return epoll_change(fd, epoll_t, epoll_t->mask | mask);
+  return epollChange(fd, epoll_t, epoll_t->mask | mask);
 }
 
 /*
 ===================================================================================================
-speEpollDisable
+epollDisable
 ===================================================================================================
 */
 bool
-speEpollDisable(unsigned fd, unsigned mask) {
+epollDisable(unsigned fd, unsigned mask) {
   if (fd >= MAX_FD) return false;
   spe_epoll_t* epoll_t = &all_epoll[fd];
   if (mask & SPE_EPOLL_READ) epoll_t->readTask = NULL;
   if (mask & SPE_EPOLL_WRITE) epoll_t->writeTask = NULL;
-  return epoll_change(fd, epoll_t, epoll_t->mask & (~mask));
+  return epollChange(fd, epoll_t, epoll_t->mask & (~mask));
 }
 
 static struct epoll_event epEvents[MAX_FD];
 /*
 ===================================================================================================
-speEpollProcess
+epollProcess
 ===================================================================================================
 */
 void
-speEpollProcess(int timeout) {
+epollProcess(int timeout) {
   int events_n = epoll_wait(epfd, epEvents, MAX_FD, timeout);
   if (unlikely(events_n < 0)) {
     if (errno == EINTR) return;
@@ -114,22 +114,24 @@ speEpollProcess(int timeout) {
 
 /*
 ===================================================================================================
-speEpollWakeup
+epollWakeup
 ===================================================================================================
 */
 void
-speEpollWakeup(void) {
+epollWakeup(void) {
   uint64_t u = 1;
-  if (write(epoll_eventfd, &u, sizeof(uint64_t)) <= 0) SPE_LOG_ERR("speEpollWakeup error");
+  if (write(epoll_eventfd, &u, sizeof(uint64_t)) <= 0) {
+    SPE_LOG_ERR("epollWakeup error");
+  }
 }
 
 /*
 ===================================================================================================
-spe_epoll_init
+epollInit
 ===================================================================================================
 */
 static void
-spe_epoll_init(void) {
+epollInit(void) {
   epfd = epoll_create(1024);
   // create eventfd
   epoll_eventfd = eventfd(0, 0);
@@ -144,18 +146,18 @@ spe_epoll_init(void) {
 
 /*
 ===================================================================================================
-speEpollFork
+epollFork
 ===================================================================================================
 */
 void
-speEpollFork(void) {
+epollFork(void) {
   close(epoll_eventfd);
   close(epfd);
-  spe_epoll_init();
+  epollInit();
 }
 
 __attribute__((constructor))
 static void
 epoll_init(void) {
-  spe_epoll_init();
+  epollInit();
 }

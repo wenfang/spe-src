@@ -28,7 +28,7 @@ driver_machine(void* arg) {
       cJSON_AddStringToObject(obj, "msg", "OK");
       pf_conn->status = PF_END;
       char* msg = cJSON_PrintUnformatted(obj);
-      spe_conn_writes(conn, msg);
+      SpeConnWrites(conn, msg);
       free(msg);
       cJSON_Delete(obj);
       SpeConnFlush(conn);
