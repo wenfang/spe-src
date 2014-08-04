@@ -22,6 +22,7 @@
 #include "spe_shm.h"
 #include "spe_monitor.h"
 #include "spe_reg.h"
+#include "spe_http_server.h"
 #include "cJSON.h"
 #include "http_parser.h"
 

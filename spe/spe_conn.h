@@ -8,7 +8,7 @@
 #include "spe_util.h"
 #include <string.h>
 
-struct spe_conn_s {
+struct SpeConn_s {
   SpeTask_t     ReadCallback;
   SpeTask_t     WriteCallback;
   int           fd;
@@ -29,7 +29,7 @@ struct spe_conn_s {
   unsigned      Closed:1;
   unsigned      Error:1;
 };
-typedef struct spe_conn_s SpeConn_t;
+typedef struct SpeConn_s SpeConn_t;
 
 extern bool
 SpeConnConnect(SpeConn_t* conn, const char* addr, const char* port);
