@@ -1,43 +1,78 @@
 #include "spe_http_server.h"
-#include "spe_conn.h"
 #include "spe_server.h"
 
 #define HTTP_READHEADER 1
+#define HTTP_CLOSE      2
 
-struct httpConn_s {
-  SpeConn_t*  conn;
-  unsigned    status; 
+static int
+httpParserUrl(http_parser* parser, const char* at, size_t length) {
+  SpeHttpRequest_t* request = parser->data;
+  spe_string_copyb(request->url, at, length);
+  fprintf(stdout, "url: %s\n", request->url->data);
+  return 0;
+}
+
+static struct http_parser_settings parser_settings = {
+  NULL,
+  httpParserUrl,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
 };
-typedef struct httpConn_s httpConn_t;
 
 static void
 driver_machine(void* arg) {
-  httpConn_t* httpConn = arg;
-  if (httpConn->conn->Error || httpConn->conn->Closed) {
-    SpeConnDestroy(httpConn->conn);
-    free(httpConn);
+  SpeHttpRequest_t* request = arg;
+  if (request->conn->Error || request->conn->Closed) {
+    SpeConnDestroy(request->conn);
+    free(request);
     return;
   }
-  switch (httpConn->status) {
+  int res;
+  switch (request->status) {
     case HTTP_READHEADER:
-      SpeConnDestroy(httpConn->conn);
-      free(httpConn);
+      res = http_parser_execute(&request->parser, &parser_settings, request->conn->Buffer->data, 
+          request->conn->Buffer->len);
+      if (res == 0 || res != request->conn->Buffer->len) {
+        SPE_LOG_ERR("http_parse_execute header error");
+        SpeConnDestroy(request->conn);
+        spe_string_destroy(request->url);
+        spe_slist_destroy(request->header);
+        free(request);
+        return;
+      }
+      request->status = HTTP_CLOSE;
+      SpeConnWrite(request->conn, request->url);
+      fprintf(stdout, "writeBuffer: %s\n", request->conn->writeBuffer->data);
+      SpeConnFlush(request->conn);
+      break;
+    case HTTP_CLOSE:
+      SpeConnDestroy(request->conn);
+      spe_string_destroy(request->url);
+      spe_slist_destroy(request->header);
+      free(request);
       break;
   }
 }
 
 static void
 httpHandler(SpeConn_t* conn) {
-  httpConn_t* httpConn = calloc(1, sizeof(httpConn_t));
-  if (!httpConn) {
-    SPE_LOG_ERR("httpConn create Error");
+  SpeHttpRequest_t* request = calloc(1, sizeof(SpeHttpRequest_t));
+  if (!request) {
+    SPE_LOG_ERR("request create Error");
     SpeConnDestroy(conn);
     return;
   }
-  conn->ReadCallback.Handler  = SPE_HANDLER1(driver_machine, httpConn);
-  conn->WriteCallback.Handler = SPE_HANDLER1(driver_machine, httpConn);
-  httpConn->conn = conn;
-  httpConn->status = HTTP_READHEADER;
+  http_parser_init(&request->parser, HTTP_REQUEST);
+  request->url          = spe_string_create(16);
+  request->header       = spe_slist_create();
+  request->parser.data  = request;
+  request->conn         = conn;
+  request->status       = HTTP_READHEADER;
+  conn->ReadCallback.Handler  = SPE_HANDLER1(driver_machine, request);
+  conn->WriteCallback.Handler = SPE_HANDLER1(driver_machine, request);
   SpeConnReaduntil(conn, "\r\n\r\n");
 }
 
