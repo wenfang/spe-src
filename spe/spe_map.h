@@ -4,31 +4,35 @@
 #include "spe_list.h"
 #include <stdbool.h>
 
-typedef bool (*spe_map_Handler)(void*);
+#define SPE_MAP_ERROR     -1
+#define SPE_MAP_CONFLICT  -2
+
+typedef bool (*SpeMapHandler)(void*);
 
 struct SpeMap_s {
   unsigned          size;           // element size
+  SpeMapHandler     handler;
   struct list_head  listHead;       // list Head
-  struct hlist_head hashHead[0];       // element of mjitem
+  struct hlist_head hashHead[0];    // element of mjitem
 };
-typedef struct SpeMap_s spe_map_t;
+typedef struct SpeMap_s SpeMap_t;
 
-extern spe_map_t* 
-spe_map_create(unsigned mapsize);
+extern SpeMap_t* 
+SpeMapCreate(unsigned mapSize, SpeMapHandler handler);
 
 extern void 
-spe_map_destroy(spe_map_t* map);
+SpeMapDestroy(SpeMap_t* map);
 
 extern void
-spe_map_clean(spe_map_t* map);
-
-extern bool   
-spe_map_del(spe_map_t* map, const char* key);
+SpeMapClean(SpeMap_t* map);
 
 extern void* 
-spe_map_get(spe_map_t* map, const char* key);
+SpeMapGet(SpeMap_t* map, const char* key);
 
 extern int 
-SpeMap_set(spe_map_t* map, const char* key, void* obj, spe_map_Handler handler);
+SpeMapSet(SpeMap_t* map, const char* key, void* obj);
+
+extern bool   
+SpeMapDel(SpeMap_t* map, const char* key);
 
 #endif
