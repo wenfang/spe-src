@@ -28,4 +28,10 @@ SpeHttpServerInit(const char* addr, int port);
 extern void
 SpeHttpServerDeinit();
 
+extern SpeHttpRequest_t*
+SpeHttpRequestCreate(SpeConn_t* conn);
+
+extern void
+SpeHttpRequestDestroy(SpeHttpRequest_t* request);
+
 #endif
