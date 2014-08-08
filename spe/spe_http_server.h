@@ -3,12 +3,14 @@
 
 #include "spe_string.h"
 #include "spe_conn.h"
+#include "spe_map.h"
 #include "http_parser.h"
 #include <stdbool.h>
 
 struct SpeHttpRequest_s {
   spe_string_t* url;
-  spe_slist_t*  header;
+  SpeMap_t*     header;
+  spe_string_t* Buffer;
   SpeConn_t*    conn;
   http_parser   parser;
   unsigned      status;

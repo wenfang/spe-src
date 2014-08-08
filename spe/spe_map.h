@@ -7,7 +7,7 @@
 #define SPE_MAP_ERROR     -1
 #define SPE_MAP_CONFLICT  -2
 
-typedef bool (*SpeMapHandler)(void*);
+typedef void (*SpeMapHandler)(void*);
 
 struct SpeMap_s {
   unsigned          size;           // element size

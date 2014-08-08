@@ -11,11 +11,27 @@ httpParserUrl(http_parser* parser, const char* at, size_t length) {
   return 0;
 }
 
+static int
+httpHeaderField(http_parser* parser, const char* at, size_t length) {
+  SpeHttpRequest_t* request = parser->data;
+  spe_string_copyb(request->Buffer, at, length);
+  return 0;
+}
+
+static int
+httpHeaderValue(http_parser* parser, const char* at, size_t length) {
+  SpeHttpRequest_t* request = parser->data;
+  spe_string_t* value = spe_string_create(16);
+  spe_string_copyb(value, at, length);
+  SpeMapSet(request->header, request->Buffer->data, value);
+  return 0;
+}
+
 static struct http_parser_settings parser_settings = {
   NULL,
   httpParserUrl,
-  NULL,
-  NULL,
+  httpHeaderField,
+  httpHeaderValue,
   NULL,
   NULL,
   NULL,
@@ -38,7 +54,8 @@ driver_machine(void* arg) {
         SPE_LOG_ERR("http_parse_execute header error");
         SpeConnDestroy(request->conn);
         spe_string_destroy(request->url);
-        spe_slist_destroy(request->header);
+        spe_string_destroy(request->Buffer);
+        SpeMapDestroy(request->header);
         free(request);
         return;
       }
@@ -49,7 +66,8 @@ driver_machine(void* arg) {
     case HTTP_CLOSE:
       SpeConnDestroy(request->conn);
       spe_string_destroy(request->url);
-      spe_slist_destroy(request->header);
+      spe_string_destroy(request->Buffer);
+      SpeMapDestroy(request->header);
       free(request);
       break;
   }
@@ -65,8 +83,9 @@ httpHandler(SpeConn_t* conn) {
   }
   http_parser_init(&request->parser, HTTP_REQUEST);
   request->url          = spe_string_create(16);
-  request->header       = spe_slist_create();
+  request->header       = SpeMapCreate(31, (SpeMapHandler)spe_string_destroy);
   request->parser.data  = request;
+  request->Buffer       = spe_string_create(0);
   request->conn         = conn;
   request->status       = HTTP_READHEADER;
   conn->ReadCallback.Handler  = SPE_HANDLER1(driver_machine, request);
