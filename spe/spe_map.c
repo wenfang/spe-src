@@ -6,16 +6,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#define KEY_MAXLEN 16
-
-struct SpeMapItem_s {
-  char              key[KEY_MAXLEN];
-  void*             obj;
-  struct list_head  listNode;
-  struct hlist_node hashNode;
-};
-typedef struct SpeMapItem_s SpeMapItem_t;
-
 /*
 ===================================================================================================
 speMapItemCreate
@@ -25,8 +15,8 @@ static SpeMapItem_t*
 speMapItemCreate(const char* key, void* obj) {
   SpeMapItem_t* item = calloc(1, sizeof(SpeMapItem_t));
   if (!item) return NULL;
-  strncpy(item->key, key, KEY_MAXLEN-1);
-  item->key[KEY_MAXLEN-1] = 0;
+  strncpy(item->key, key, SPE_KEY_MAXLEN-1);
+  item->key[SPE_KEY_MAXLEN-1] = 0;
   item->obj               = obj;
   INIT_LIST_HEAD(&item->listNode);
   INIT_HLIST_NODE(&item->hashNode);
@@ -209,4 +199,22 @@ SpeMapDestroy(SpeMap_t* map) {
   if (!map) return;
   SpeMapClean(map);
   free(map);
+}
+
+/*
+===================================================================================================
+SpeMapNext
+===================================================================================================
+*/
+SpeMapItem_t*
+SpeMapNext(SpeMap_t* map, SpeMapItem_t* item) {
+  ASSERT(map);
+  if (!item) {
+    if (list_empty(&map->listHead)) return NULL;
+    item = list_first_entry(&map->listHead, SpeMapItem_t, listNode);
+    return item;
+  }
+  list_for_each_entry_continue(item, &map->listHead, listNode) break;
+  if (&item->listNode == &map->listHead) return NULL;
+  return item;
 }

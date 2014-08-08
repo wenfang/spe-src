@@ -59,6 +59,11 @@ driver_machine(void* arg) {
         free(request);
         return;
       }
+      SpeMapItem_t* item = SpeMapNext(request->header, NULL);
+      while(item) {
+        fprintf(stdout, "header %s:%s\n", item->key, ((spe_string_t*)item->obj)->data);
+        item = SpeMapNext(request->header, item);
+      }
       request->status = HTTP_CLOSE;
       SpeConnWrite(request->conn, request->url);
       SpeConnFlush(request->conn);
