@@ -2,8 +2,14 @@
 #include <stdio.h>
 
 static void
-testHandler(SpeHttpRequest_t* request) {
-  SpeConnWrites(request->conn, "test handler called\r\n");
+test1Handler(SpeHttpRequest_t* request) {
+  SpeConnWrites(request->conn, "test1 handler called\r\n");
+  SpeHttpRequestFinish(request);
+}
+
+static void
+test2Handler(SpeHttpRequest_t* request) {
+  SpeConnWrites(request->conn, "test2 handler called\r\n");
   SpeHttpRequestFinish(request);
 }
 
@@ -13,7 +19,8 @@ mod_init(void) {
     fprintf(stderr, "SpeServerSetHandler Error\n");
     return false;
   }
-  SpeHttpRegisterHandler("/test", testHandler);
+  SpeHttpRegisterHandler("/test1", test1Handler);
+  SpeHttpRegisterHandler("/test2", test2Handler);
   return true;
 }
 
