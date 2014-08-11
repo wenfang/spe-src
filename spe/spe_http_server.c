@@ -1,8 +1,57 @@
 #include "spe_http_server.h"
 #include "spe_server.h"
+#include "spe_reg.h"
 
 #define HTTP_READHEADER 1
 #define HTTP_CLOSE      2
+
+static LIST_HEAD(httpHandlerList);
+
+struct httpHandler_s {
+  struct list_head  handlerNode;
+  SpeReg_t*         reg;
+  SpeHttpHandler    handler;
+};
+typedef struct httpHandler_s httpHandler_t;
+
+/*
+===================================================================================================
+SpeHttpRegisterHandler
+===================================================================================================
+*/
+bool
+SpeHttpRegisterHandler(const char* pattern, SpeHttpHandler handler) {
+  httpHandler_t* httpHandler = calloc(1, sizeof(httpHandler_t));
+  if (!httpHandler) {
+    SPE_LOG_ERR("httpHandler calloc error");
+    return false;
+  }
+  httpHandler->reg = SpeRegCreate(pattern);
+  if (!httpHandler->reg) {
+    SPE_LOG_ERR("SpeRegCreate error");
+    free(httpHandler);
+    return false;
+  }
+  httpHandler->handler = handler;
+  INIT_LIST_HEAD(&httpHandler->handlerNode);
+  list_add_tail(&httpHandler->handlerNode, &httpHandlerList);
+  return true;
+}
+
+/*
+===================================================================================================
+SpeHttpUnregisterHandler
+===================================================================================================
+*/
+void
+SpeHttpUnregisterHandler() {
+  httpHandler_t* httpHandler;
+  while (!list_empty(&httpHandlerList)) {
+    httpHandler = list_first_entry(&httpHandlerList, httpHandler_t, handlerNode);
+    list_del(&httpHandler->handlerNode);
+    free(httpHandler);
+  }
+}
 
 static int
 httpParserUrl(http_parser* parser, const char* at, size_t length) {
@@ -38,11 +87,25 @@ static struct http_parser_settings parser_settings = {
 };
 
 static void
+dispatchHandler(SpeHttpRequest_t* request) {
+  httpHandler_t* httpHandler;
+  list_for_each_entry(httpHandler, &httpHandlerList, handlerNode) {
+    if (!SpeRegSearch(httpHandler->reg, request->url->data)) {
+      continue;
+    }
+    httpHandler->handler(request);
+    return;
+  }
+  // No Handler Found!!! destroy
+  SpeHttpRequestDestroy(request);
+}
+
+static void
 driver_machine(void* arg) {
   SpeHttpRequest_t* request = arg;
   if (request->conn->Error || request->conn->Closed) {
-    SPE_LOG_ERR("request conn error or closed");
-    SpeHttpRequestDestroy(request);
+    SpeConnDestroy(request->conn);
+    free(request);
     return;
   }
   int res;
@@ -55,14 +118,7 @@ driver_machine(void* arg) {
         SpeHttpRequestDestroy(request);
         return;
       }
-      SpeMapItem_t* item = SpeMapNext(request->header, NULL);
-      while(item) {
-        fprintf(stdout, "header %s:%s\n", item->key, ((spe_string_t*)item->obj)->data);
-        item = SpeMapNext(request->header, item);
-      }
-      request->status = HTTP_CLOSE;
-      SpeConnWrite(request->conn, request->url);
-      SpeConnFlush(request->conn);
+      dispatchHandler(request);
       break;
     case HTTP_CLOSE:
       SpeHttpRequestDestroy(request);
@@ -106,6 +162,18 @@ SpeHttpRequestDestroy(SpeHttpRequest_t* request) {
   free(request);
 }
 
+/*
+===================================================================================================
+SpeHttpRequestFinish
+===================================================================================================
+*/
+void
+SpeHttpRequestFinish(SpeHttpRequest_t* request) {
+  ASSERT(request);
+  SpeConnFlush(request->conn);
+  request->status = HTTP_CLOSE;
+}
+
 static void
 httpHandler(SpeConn_t* conn) {
   SpeHttpRequest_t* request = SpeHttpRequestCreate(conn);
@@ -114,7 +182,7 @@ httpHandler(SpeConn_t* conn) {
     SpeConnDestroy(conn);
     return;
   }
-  request->status             = HTTP_READHEADER;
+  request->status       = HTTP_READHEADER;
   conn->ReadCallback.Handler  = SPE_HANDLER1(driver_machine, request);
   conn->WriteCallback.Handler = SPE_HANDLER1(driver_machine, request);
   SpeConnReaduntil(conn, "\r\n\r\n");

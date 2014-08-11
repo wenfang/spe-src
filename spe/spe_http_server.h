@@ -22,6 +22,9 @@ typedef void (*SpeHttpHandler)(SpeHttpRequest_t*);
 extern bool
 SpeHttpRegisterHandler(const char* pattern, SpeHttpHandler handler);
 
+extern void
+SpeHttpUnregisterHandler();
+
 extern bool
 SpeHttpServerInit(const char* addr, int port);
 
@@ -33,5 +36,8 @@ SpeHttpRequestCreate(SpeConn_t* conn);
 
 extern void
 SpeHttpRequestDestroy(SpeHttpRequest_t* request);
+
+extern void
+SpeHttpRequestFinish(SpeHttpRequest_t* request);
 
 #endif
