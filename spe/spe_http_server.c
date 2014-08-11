@@ -93,6 +93,8 @@ dispatchHandler(SpeHttpRequest_t* request) {
     if (!SpeRegSearch(httpHandler->reg, request->url->data)) {
       continue;
     }
+    request->conn->ReadCallback.Handler  = SPE_HANDLER1(httpHandler->handler, request);
+    request->conn->WriteCallback.Handler = SPE_HANDLER1(httpHandler->handler, request);
     httpHandler->handler(request);
     return;
   }
@@ -170,8 +172,10 @@ SpeHttpRequestFinish
 void
 SpeHttpRequestFinish(SpeHttpRequest_t* request) {
   ASSERT(request);
-  SpeConnFlush(request->conn);
+  request->conn->ReadCallback.Handler  = SPE_HANDLER1(driver_machine, request);
+  request->conn->WriteCallback.Handler = SPE_HANDLER1(driver_machine, request);
   request->status = HTTP_CLOSE;
+  SpeConnFlush(request->conn);
 }
 
 static void
@@ -182,7 +186,7 @@ httpHandler(SpeConn_t* conn) {
     SpeConnDestroy(conn);
     return;
   }
-  request->status       = HTTP_READHEADER;
+  request->status             = HTTP_READHEADER;
   conn->ReadCallback.Handler  = SPE_HANDLER1(driver_machine, request);
   conn->WriteCallback.Handler = SPE_HANDLER1(driver_machine, request);
   SpeConnReaduntil(conn, "\r\n\r\n");

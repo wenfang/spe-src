@@ -10,7 +10,7 @@ extern int
 spe_sock_accept(int fd);
 
 extern int  
-spe_sock_accept_timeout(int fd, int timeout);
+SpeSockAcceptTimeout(int fd, int timeout);
 
 extern bool 
 SpeSockSetBlock(int fd, int block);

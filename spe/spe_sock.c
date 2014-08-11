@@ -80,11 +80,11 @@ spe_sock_accept(int sfd) {
 
 /*
 ===================================================================================================
-spe_sock_accept_timeout
+SpeSockAcceptTimeout
 ===================================================================================================
 */
 int 
-spe_sock_accept_timeout(int sfd, int timeout) {
+SpeSockAcceptTimeout(int sfd, int timeout) {
   struct sockaddr_in caddr;
   socklen_t caddr_len = 0;
   bzero(&caddr, sizeof(caddr));
