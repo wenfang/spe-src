@@ -8,12 +8,13 @@
 #include <stdbool.h>
 
 struct SpeHttpRequest_s {
-  spe_string_t* url;
+  SpeConn_t*    Conn;
+  SpeString_t* url;
   SpeMap_t*     header;
-  spe_string_t* Buffer;
-  SpeConn_t*    conn;
+  SpeString_t* headerName;
   http_parser   parser;
   unsigned      status;
+  void*         Private;
 };
 typedef struct SpeHttpRequest_s SpeHttpRequest_t;
 

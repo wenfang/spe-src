@@ -5,8 +5,8 @@
 #include <regex.h>
 
 struct SpeReg_s {
-  regex_t       preg;
-  spe_slist_t*  Result;
+  regex_t     preg;
+  SpeSlist_t* Result;
 };
 typedef struct SpeReg_s SpeReg_t;
 

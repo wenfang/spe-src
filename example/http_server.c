@@ -3,13 +3,13 @@
 
 static void
 test1Handler(SpeHttpRequest_t* request) {
-  SpeConnWrites(request->conn, "test1 handler called\r\n");
+  SpeConnWrites(request->Conn, "test1 handler called\r\n");
   SpeHttpRequestFinish(request);
 }
 
 static void
 test2Handler(SpeHttpRequest_t* request) {
-  SpeConnWrites(request->conn, "test2 handler called\r\n");
+  SpeConnWrites(request->Conn, "test2 handler called\r\n");
   SpeHttpRequestFinish(request);
 }
 

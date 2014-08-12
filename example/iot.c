@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 void
-process(spe_string_t* input) {
+process(SpeString_t* input) {
   fprintf(stdout, "You Input is: %s\r\n", input->data);
   fflush(stdout);
 }

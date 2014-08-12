@@ -5,7 +5,7 @@
 #define PF_END  1
 
 struct pf_conn_s {
-  SpeConn_t* conn;
+  SpeConn_t*  conn;
   int         status;
 };
 typedef struct pf_conn_s pf_conn_t;

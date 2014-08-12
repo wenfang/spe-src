@@ -54,32 +54,32 @@ SpeHttpUnregisterHandler() {
 }
 
 static int
-httpParserUrl(http_parser* parser, const char* at, size_t length) {
+httpUrl(http_parser* parser, const char* at, size_t length) {
   SpeHttpRequest_t* request = parser->data;
-  spe_string_copyb(request->url, at, length);
+  SpeStringCopyb(request->url, at, length);
   return 0;
 }
 
 static int
-httpHeaderField(http_parser* parser, const char* at, size_t length) {
+httpHeaderName(http_parser* parser, const char* at, size_t length) {
   SpeHttpRequest_t* request = parser->data;
-  spe_string_copyb(request->Buffer, at, length);
+  SpeStringCopyb(request->headerName, at, length);
   return 0;
 }
 
 static int
 httpHeaderValue(http_parser* parser, const char* at, size_t length) {
   SpeHttpRequest_t* request = parser->data;
-  spe_string_t* value = spe_string_create(16);
-  spe_string_copyb(value, at, length);
-  SpeMapSet(request->header, request->Buffer->data, value);
+  SpeString_t* headerValue = SpeStringCreate(0);
+  SpeStringCopyb(headerValue, at, length);
+  SpeMapSet(request->header, request->headerName->data, headerValue);
   return 0;
 }
 
 static struct http_parser_settings parser_settings = {
   NULL,
-  httpParserUrl,
-  httpHeaderField,
+  httpUrl,
+  httpHeaderName,
   httpHeaderValue,
   NULL,
   NULL,
@@ -93,8 +93,8 @@ dispatchHandler(SpeHttpRequest_t* request) {
     if (!SpeRegSearch(httpHandler->reg, request->url->data)) {
       continue;
     }
-    request->conn->ReadCallback.Handler  = SPE_HANDLER1(httpHandler->handler, request);
-    request->conn->WriteCallback.Handler = SPE_HANDLER1(httpHandler->handler, request);
+    request->Conn->ReadCallback.Handler  = SPE_HANDLER1(httpHandler->handler, request);
+    request->Conn->WriteCallback.Handler = SPE_HANDLER1(httpHandler->handler, request);
     httpHandler->handler(request);
     return;
   }
@@ -105,17 +105,17 @@ dispatchHandler(SpeHttpRequest_t* request) {
 static void
 driver_machine(void* arg) {
   SpeHttpRequest_t* request = arg;
-  if (request->conn->Error || request->conn->Closed) {
-    SpeConnDestroy(request->conn);
+  if (request->Conn->Error || request->Conn->Closed) {
+    SpeConnDestroy(request->Conn);
     free(request);
     return;
   }
   int res;
   switch (request->status) {
     case HTTP_READHEADER:
-      res = http_parser_execute(&request->parser, &parser_settings, request->conn->Buffer->data, 
-          request->conn->Buffer->len);
-      if (res == 0 || res != request->conn->Buffer->len) {
+      res = http_parser_execute(&request->parser, &parser_settings, request->Conn->Buffer->data, 
+          request->Conn->Buffer->len);
+      if (res == 0 || res != request->Conn->Buffer->len) {
         SPE_LOG_ERR("http_parse_execute header error");
         SpeHttpRequestDestroy(request);
         return;
@@ -142,10 +142,10 @@ SpeHttpRequestCreate(SpeConn_t* conn) {
   }
   http_parser_init(&request->parser, HTTP_REQUEST);
   request->parser.data  = request;
-  request->url          = spe_string_create(16);
-  request->header       = SpeMapCreate(31, (SpeMapHandler)spe_string_destroy);
-  request->Buffer       = spe_string_create(0);
-  request->conn         = conn;
+  request->url          = SpeStringCreate(16);
+  request->header       = SpeMapCreate(31, (SpeMapHandler)SpeStringDestroy);
+  request->headerName   = SpeStringCreate(16);
+  request->Conn         = conn;
   return request;
 }
 
@@ -157,10 +157,10 @@ SpeHttpRequestDestroy
 void
 SpeHttpRequestDestroy(SpeHttpRequest_t* request) {
   ASSERT(request);
-  SpeConnDestroy(request->conn);
-  spe_string_destroy(request->url);
-  spe_string_destroy(request->Buffer);
+  SpeConnDestroy(request->Conn);
+  SpeStringDestroy(request->url);
   SpeMapDestroy(request->header);
+  SpeStringDestroy(request->headerName);
   free(request);
 }
 
@@ -172,10 +172,10 @@ SpeHttpRequestFinish
 void
 SpeHttpRequestFinish(SpeHttpRequest_t* request) {
   ASSERT(request);
-  request->conn->ReadCallback.Handler  = SPE_HANDLER1(driver_machine, request);
-  request->conn->WriteCallback.Handler = SPE_HANDLER1(driver_machine, request);
+  request->Conn->ReadCallback.Handler  = SPE_HANDLER1(driver_machine, request);
+  request->Conn->WriteCallback.Handler = SPE_HANDLER1(driver_machine, request);
   request->status = HTTP_CLOSE;
-  SpeConnFlush(request->conn);
+  SpeConnFlush(request->Conn);
 }
 
 static void

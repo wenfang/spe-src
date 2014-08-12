@@ -16,9 +16,9 @@ struct SpeConn_s {
   SpeTask_t     writeTask;
   unsigned      readExpireTime;
   unsigned      writeExpireTime;
-  spe_string_t* readBuffer;
-  spe_string_t* writeBuffer;
-  spe_string_t* Buffer;
+  SpeString_t* readBuffer;
+  SpeString_t* writeBuffer;
+  SpeString_t* Buffer;
   char*         delim;
   unsigned      rbytes;
   unsigned      readType:2;
@@ -47,21 +47,21 @@ static inline bool
 SpeConnWriteb(SpeConn_t* conn, char* buf, unsigned len) {
   ASSERT(conn && buf && len);
   if (conn->Closed || conn->Error) return false;
-  return spe_string_catb(conn->writeBuffer, buf, len);
+  return SpeStringCatb(conn->writeBuffer, buf, len);
 }
 
 static inline bool
-SpeConnWrite(SpeConn_t* conn, spe_string_t* buf) {
+SpeConnWrite(SpeConn_t* conn, SpeString_t* buf) {
   ASSERT(conn && buf);
   if (conn->Closed || conn->Error) return false;
-  return spe_string_catb(conn->writeBuffer, buf->data, buf->len);
+  return SpeStringCatb(conn->writeBuffer, buf->data, buf->len);
 }
 
 static inline bool
 SpeConnWrites(SpeConn_t* conn, char* buf) {
   ASSERT(conn && buf);
   if (conn->Closed || conn->Error) return false;
-  return spe_string_catb(conn->writeBuffer, buf, strlen(buf));
+  return SpeStringCatb(conn->writeBuffer, buf, strlen(buf));
 }
 
 extern bool

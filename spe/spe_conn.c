@@ -110,28 +110,28 @@ readNormal(void* arg) {
       break;
     }
     // read some data break
-    spe_string_catb(conn->readBuffer, buf, res);
+    SpeStringCatb(conn->readBuffer, buf, res);
     break;
   }
   // check read type
   if (conn->readType == SPE_CONN_READUNTIL) {
-    int pos = spe_string_search(conn->readBuffer, conn->delim);
+    int pos = SpeString_search(conn->readBuffer, conn->delim);
     if (pos != -1) {
-      spe_string_copyb(conn->Buffer, conn->readBuffer->data, pos);
-      spe_string_cats(conn->Buffer, conn->delim);
-      spe_string_consume(conn->readBuffer, pos + strlen(conn->delim));
+      SpeStringCopyb(conn->Buffer, conn->readBuffer->data, pos);
+      SpeStringCats(conn->Buffer, conn->delim);
+      SpeStringConsume(conn->readBuffer, pos + strlen(conn->delim));
       goto end_out;
     }
   } else if (conn->readType == SPE_CONN_READBYTES) {
     if (conn->rbytes <= conn->readBuffer->len) {
-      spe_string_copyb(conn->Buffer, conn->readBuffer->data, conn->rbytes);
-      spe_string_consume(conn->readBuffer, conn->rbytes);
+      SpeStringCopyb(conn->Buffer, conn->readBuffer->data, conn->rbytes);
+      SpeStringConsume(conn->readBuffer, conn->rbytes);
       goto end_out;
     }
   } else if (conn->readType == SPE_CONN_READ) {
     if (conn->readBuffer->len > 0) { 
-      spe_string_copyb(conn->Buffer, conn->readBuffer->data, conn->readBuffer->len);
-      spe_string_consume(conn->readBuffer, conn->readBuffer->len);
+      SpeStringCopyb(conn->Buffer, conn->readBuffer->data, conn->readBuffer->len);
+      SpeStringConsume(conn->readBuffer, conn->readBuffer->len);
       goto end_out;
     }
   }
@@ -156,10 +156,10 @@ SpeConnReaduntil(SpeConn_t* conn, char* delim) {
   ASSERT(conn && conn->readType == SPE_CONN_READNONE);
   if (!delim || conn->Closed || conn->Error) return false;
   // (sync):
-  int pos = spe_string_search(conn->readBuffer, delim);
+  int pos = SpeString_search(conn->readBuffer, delim);
   if (pos != -1) {
-    spe_string_copyb(conn->Buffer, conn->readBuffer->data, pos);
-    spe_string_consume(conn->readBuffer, pos + strlen(delim));
+    SpeStringCopyb(conn->Buffer, conn->readBuffer->data, pos);
+    SpeStringConsume(conn->readBuffer, pos + strlen(delim));
     SpeTaskEnqueue(&conn->ReadCallback);
     return true;
   }
@@ -185,8 +185,8 @@ SpeConnReadbytes(SpeConn_t* conn, unsigned len) {
   if (len == 0 || conn->Closed || conn->Error ) return false;
   // (sync):
   if (len <= conn->readBuffer->len) {
-    spe_string_copyb(conn->Buffer, conn->readBuffer->data, len);
-    spe_string_consume(conn->readBuffer, len);
+    SpeStringCopyb(conn->Buffer, conn->readBuffer->data, len);
+    SpeStringConsume(conn->readBuffer, len);
     SpeTaskEnqueue(&conn->ReadCallback);
     return true;
   }
@@ -212,8 +212,8 @@ SpeConnRead(SpeConn_t* conn) {
   if (conn->Closed || conn->Error) return false;
   // (sync):
   if (conn->readBuffer->len > 0) {
-    spe_string_copyb(conn->Buffer, conn->readBuffer->data, conn->readBuffer->len);
-    spe_string_consume(conn->readBuffer, conn->readBuffer->len);
+    SpeStringCopyb(conn->Buffer, conn->readBuffer->data, conn->readBuffer->len);
+    SpeStringConsume(conn->readBuffer, conn->readBuffer->len);
     SpeTaskEnqueue(&conn->ReadCallback);
     return true;
   }
@@ -251,7 +251,7 @@ writeNormal(void* arg) {
     }
     goto end_out;
   }
-  spe_string_consume(conn->writeBuffer, res);
+  SpeStringConsume(conn->writeBuffer, res);
   if (conn->writeBuffer->len == 0) goto end_out;
   return;
 
@@ -308,13 +308,13 @@ connInit(SpeConn_t* conn, unsigned fd) {
   SpeTaskInit(&conn->writeTask);
   SpeTaskInit(&conn->ReadCallback);
   SpeTaskInit(&conn->WriteCallback);
-  conn->readBuffer  = spe_string_create(BUF_SIZE);
-  conn->writeBuffer = spe_string_create(BUF_SIZE);
-  conn->Buffer      = spe_string_create(BUF_SIZE);
+  conn->readBuffer  = SpeStringCreate(BUF_SIZE);
+  conn->writeBuffer = SpeStringCreate(BUF_SIZE);
+  conn->Buffer      = SpeStringCreate(BUF_SIZE);
   if (!conn->readBuffer || !conn->writeBuffer || !conn->Buffer) {
-    spe_string_destroy(conn->readBuffer);
-    spe_string_destroy(conn->writeBuffer);
-    spe_string_destroy(conn->Buffer);
+    SpeStringDestroy(conn->readBuffer);
+    SpeStringDestroy(conn->writeBuffer);
+    SpeStringDestroy(conn->Buffer);
     return false;
   }
   return true;
@@ -334,9 +334,9 @@ SpeConnCreate(unsigned fd) {
     SPE_LOG_ERR("connInit error");
     return NULL;
   }
-  spe_string_clean(conn->readBuffer);
-  spe_string_clean(conn->writeBuffer);
-  spe_string_clean(conn->Buffer);
+  SpeStringClean(conn->readBuffer);
+  SpeStringClean(conn->writeBuffer);
+  SpeStringClean(conn->Buffer);
   // init conn status
   conn->readExpireTime  = 0;
   conn->writeExpireTime = 0;

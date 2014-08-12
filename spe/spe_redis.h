@@ -10,8 +10,8 @@ struct SpeRedis_s {
   const char*   host;
   const char*   port;
   spe_handler_t handler;
-  spe_slist_t*  Buffer;
-  spe_slist_t*  sendBuffer;
+  SpeSlist_t*  Buffer;
+  SpeSlist_t*  sendBuffer;
   unsigned      blockLeft;
   unsigned      status:7;
   unsigned      Error:1;

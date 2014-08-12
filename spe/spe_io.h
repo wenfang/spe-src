@@ -4,9 +4,9 @@
 #include "spe_string.h"
 
 struct SpeIo_s {
-  spe_string_t* Buffer;
-  spe_string_t* readBuffer;
-  spe_string_t* writeBuffer;
+  SpeString_t*  Buffer;
+  SpeString_t*  readBuffer;
+  SpeString_t*  writeBuffer;
   const char*   delim;
   unsigned      fd;
   unsigned      rbytes;
@@ -29,24 +29,24 @@ extern int
 SpeIoFlush(SpeIo_t* io);
 
 static inline bool
-SpeIoWrite(SpeIo_t* io, spe_string_t* buf) {
+SpeIoWrite(SpeIo_t* io, SpeString_t* buf) {
   ASSERT(io && buf);
   if (io->closed || io->error) return false;
-  return spe_string_catb(io->writeBuffer, buf->data, buf->len);
+  return SpeStringCatb(io->writeBuffer, buf->data, buf->len);
 }
 
 static inline bool
 SpeIoWriteb(SpeIo_t* io, char* buf, unsigned len) {
   ASSERT(io && buf && len);
   if (io->closed || io->error) return false;
-  return spe_string_catb(io->writeBuffer, buf, len);
+  return SpeStringCatb(io->writeBuffer, buf, len);
 }
 
 static inline bool
 SpeIoWrites(SpeIo_t* io, char* buf) {
   ASSERT(io && buf);
   if (io->closed || io->error) return false;
-  return spe_string_catb(io->writeBuffer, buf, strlen(buf));
+  return SpeStringCatb(io->writeBuffer, buf, strlen(buf));
 }
 
 extern SpeIo_t*

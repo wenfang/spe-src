@@ -3,12 +3,12 @@
 
 /*
 ===================================================================================================
-spe_string_ready
+SpeStringready
   alloc enough size for spe_string
 ===================================================================================================
 */
 static bool 
-spe_string_ready(spe_string_t* str, unsigned need_size) {
+SpeStringready(SpeString_t* str, unsigned need_size) {
   // 1. have enough size, return true
   if (need_size <= str->_size - (str->data - str->_start)) return true;
   // 2. no need to realloc
@@ -37,26 +37,26 @@ spe_string_ready(spe_string_t* str, unsigned need_size) {
 
 /*
 ===================================================================================================
-spe_string_readyplus
-  call spe_string_ready
+SpeStringreadyplus
+  call SpeStringready
 ===================================================================================================
 */
 static inline bool 
-spe_string_readyplus(spe_string_t* str, unsigned need_size_plus) {
-  return spe_string_ready(str, str->len + need_size_plus);
+SpeStringreadyplus(SpeString_t* str, unsigned need_size_plus) {
+  return SpeStringready(str, str->len + need_size_plus);
 }
 
 /*
 ===================================================================================================
-spe_string_catb
+SpeStringCatb
   cat binary string to spe_string
 ===================================================================================================
 */
 bool 
-spe_string_catb(spe_string_t* dst, const char* src, unsigned len) {
+SpeStringCatb(SpeString_t* dst, const char* src, unsigned len) {
   ASSERT(dst && src);
-  if (!spe_string_readyplus(dst, len+1)) {
-    SPE_LOG_ERR("spe_string_readyplus error");
+  if (!SpeStringreadyplus(dst, len+1)) {
+    SPE_LOG_ERR("SpeStringreadyplus error");
     return false;
   }
   memcpy(dst->data + dst->len, src, len);            
@@ -67,15 +67,15 @@ spe_string_catb(spe_string_t* dst, const char* src, unsigned len) {
 
 /*
 ===================================================================================================
-spe_string_copyb
+SpeStringCopyb
   copy binary string to spe_string
 ===================================================================================================
 */
 bool 
-spe_string_copyb(spe_string_t* dst, const char* src, unsigned len) {
+SpeStringCopyb(SpeString_t* dst, const char* src, unsigned len) {
   ASSERT(dst && src);
-  if (!spe_string_ready(dst, len+1)) {
-    SPE_LOG_ERR("spe_string_ready error");
+  if (!SpeStringready(dst, len+1)) {
+    SPE_LOG_ERR("SpeStringready error");
     return false;
   }
   memcpy(dst->_start, src, len);
@@ -87,16 +87,16 @@ spe_string_copyb(spe_string_t* dst, const char* src, unsigned len) {
 
 /*
 ===================================================================================================
-spe_string_consume
+SpeStringConsume
   consume len string from left
 ===================================================================================================
 */
 int 
-spe_string_consume(spe_string_t* str, unsigned len) {
+SpeStringConsume(SpeString_t* str, unsigned len) {
   ASSERT(str);
   if (len >= str->len) {
     len = str->len;
-    spe_string_clean(str);
+    SpeStringClean(str);
     return len; 
   }
   str->data           += len;
@@ -107,16 +107,16 @@ spe_string_consume(spe_string_t* str, unsigned len) {
 
 /*
 ===================================================================================================
-spe_string_rconsume
+SpeStringrconsume
   consume str from right
 ===================================================================================================
 */
 int 
-spe_string_rconsume(spe_string_t* str, unsigned len) {
+SpeStringrconsume(SpeString_t* str, unsigned len) {
   ASSERT(str);
   if (len >= str->len) {
     len = str->len;
-    spe_string_clean(str);
+    SpeStringClean(str);
     return len;
   }
   str->len            -= len;
@@ -126,14 +126,14 @@ spe_string_rconsume(spe_string_t* str, unsigned len) {
 
 /*
 ===================================================================================================
-spe_string_search
+SpeString_search
     search string in x
     return startpositon in x
             -1 for no found or error
 ===================================================================================================
 */
 int 
-spe_string_search(spe_string_t* str, const char* key) {
+SpeString_search(SpeString_t* str, const char* key) {
   ASSERT(str && key);
   char* point = strstr(str->data, key);
   if (!point) return -1;
@@ -142,12 +142,12 @@ spe_string_search(spe_string_t* str, const char* key) {
 
 /*
 ===================================================================================================
-spe_string_lstrim
+SpeStringlstrim
   strim string from left
 ===================================================================================================
 */
 void 
-spe_string_lstrim(spe_string_t* str) {
+SpeStringlstrim(SpeString_t* str) {
   ASSERT(str);
   int pos;
   for (pos = 0; pos < str->len; pos++) {
@@ -155,17 +155,17 @@ spe_string_lstrim(spe_string_t* str) {
         str->data[pos] == '\r' || str->data[pos] == '\n') continue;
     break;
   }
-  if (pos) spe_string_consume(str, pos);
+  if (pos) SpeStringConsume(str, pos);
 }
 
 /*
 ===================================================================================================
-spe_string_rstrim
+SpeStringrstrim
   strim string from right
 ===================================================================================================
 */
 void 
-spe_string_rstrim(spe_string_t* str) {
+SpeStringrstrim(SpeString_t* str) {
   ASSERT(str);
   int pos;
   for (pos = str->len-1; pos >= 0; pos--) {
@@ -179,14 +179,14 @@ spe_string_rstrim(spe_string_t* str) {
 
 /*
 ===================================================================================================
-spe_string_split
-    split spe_string into spe_slist_t
+SpeString_split
+    split spe_string into SpeSlist_t
 ===================================================================================================
 */
-spe_slist_t*
-spe_string_split(spe_string_t* str, const char* key) {
+SpeSlist_t*
+SpeString_split(SpeString_t* str, const char* key) {
   ASSERT(str && key);
-  spe_slist_t* slist = spe_slist_create();
+  SpeSlist_t* slist = spe_slist_create();
   if (!slist) {
     SPE_LOG_ERR("spe_slist_create error");
     return NULL;
@@ -211,12 +211,12 @@ spe_string_split(spe_string_t* str, const char* key) {
 
 /*
 ===================================================================================================
-spe_string_cmp
+SpeStringCmp
   compare two spe_string
 ===================================================================================================
 */
 int 
-spe_string_cmp(spe_string_t* str1, spe_string_t* str2) {
+SpeStringCmp(SpeString_t* str1, SpeString_t* str2) {
   ASSERT(str1 && str2);
   int minlen = (str1->len > str2->len) ? str2->len : str1->len;
   int ret = memcmp(str1->data, str2->data, minlen);
@@ -229,12 +229,12 @@ spe_string_cmp(spe_string_t* str1, spe_string_t* str2) {
 
 /*
 ===================================================================================================
-spe_string_tolower
+SpeString_tolower
   change spe_string to lower
 ===================================================================================================
 */
 void
-spe_string_tolower(spe_string_t* str) {
+SpeString_tolower(SpeString_t* str) {
   ASSERT(str);
   for (int i=0; i<str->len; i++) {
     if (str->data[i]>='A' && str->data[i]<='Z') str->data[i] += 32;
@@ -243,12 +243,12 @@ spe_string_tolower(spe_string_t* str) {
 
 /*
 ===================================================================================================
-spe_string_toupper
+SpeString_toupper
   change spe_string to capitable
 ===================================================================================================
 */
 void
-spe_string_toupper(spe_string_t* str) {
+SpeString_toupper(SpeString_t* str) {
   ASSERT(str);
   for (int i=0; i <str->len; i++) {
     if (str->data[i]>='a' && str->data[i]<='z') str->data[i] -= 32;
@@ -257,14 +257,14 @@ spe_string_toupper(spe_string_t* str) {
 
 /*
 ===================================================================================================
-spe_string_read
+SpeStringread
 ===================================================================================================
 */
 int
-spe_string_read(int fd, spe_string_t* str, unsigned len) {
+SpeStringread(int fd, SpeString_t* str, unsigned len) {
   ASSERT(str);
-  if (!spe_string_ready(str, len+1)) {
-    SPE_LOG_ERR("spe_string_ready error");
+  if (!SpeStringready(str, len+1)) {
+    SPE_LOG_ERR("SpeStringready error");
     return -1;
   }
   int res = read(fd, str->_start, len);
@@ -277,14 +277,14 @@ spe_string_read(int fd, spe_string_t* str, unsigned len) {
 
 /*
 ===================================================================================================
-spe_string_read_append
+SpeStringread_append
 ===================================================================================================
 */
 int
-spe_string_read_append(int fd, spe_string_t* str, unsigned len) {
+SpeStringread_append(int fd, SpeString_t* str, unsigned len) {
   ASSERT(str);
-  if (!spe_string_readyplus(str, len+1)) {
-    SPE_LOG_ERR("spe_string_readyplus error");
+  if (!SpeStringreadyplus(str, len+1)) {
+    SPE_LOG_ERR("SpeStringreadyplus error");
     return -1;
   }
   int res = read(fd, str->data+str->len, len);
@@ -298,15 +298,15 @@ spe_string_read_append(int fd, spe_string_t* str, unsigned len) {
 
 /*
 ===================================================================================================
-spe_string_create
+SpeStringCreate
 ===================================================================================================
 */
-spe_string_t* 
-spe_string_create(unsigned defaultSize) {
+SpeString_t* 
+SpeStringCreate(unsigned defaultSize) {
   if (!defaultSize) defaultSize = DEFAULT_SIZE;
-  spe_string_t* str = calloc(1, sizeof(spe_string_t)+defaultSize*sizeof(char));
+  SpeString_t* str = calloc(1, sizeof(SpeString_t)+defaultSize*sizeof(char));
   if (!str) {
-    SPE_LOG_ERR("spe_string_t calloc error");
+    SPE_LOG_ERR("SpeString_t calloc error");
     return NULL;
   }
   str->_start = str->_buffer;
@@ -317,12 +317,12 @@ spe_string_create(unsigned defaultSize) {
 
 /*
 ===================================================================================================
-spe_string_destroy
+SpeStringDestroy
     free spe_string
 ===================================================================================================
 */
 void
-spe_string_destroy(spe_string_t* str) {
+SpeStringDestroy(SpeString_t* str) {
   if (!str) return;
   if (str->_start != str->_buffer) free(str->_start);
   free(str);
@@ -335,14 +335,14 @@ spe_slist_ready
 ===================================================================================================
 */
 static bool 
-spe_slist_ready(spe_slist_t* slist, unsigned need_size) {
+spe_slist_ready(SpeSlist_t* slist, unsigned need_size) {
   // have enough space
   unsigned size = slist->_size;
   if (need_size <= size) return true;
   // realloc space
   slist->_size = 30 + need_size + (need_size >> 3);
-  spe_string_t** new_data;
-  new_data = realloc(slist->data, slist->_size*sizeof(spe_string_t*));
+  SpeString_t** new_data;
+  new_data = realloc(slist->data, slist->_size*sizeof(SpeString_t*));
   if (!new_data) {
     SPE_LOG_ERR("realloc error");
     slist->_size = size;
@@ -361,7 +361,7 @@ spe_slist_readyplus
 ===================================================================================================
 */
 static inline bool 
-spe_slist_readyplus(spe_slist_t* slist, unsigned n) {
+spe_slist_readyplus(SpeSlist_t* slist, unsigned n) {
   return spe_slist_ready(slist, slist->len + n);
 }
  
@@ -372,7 +372,7 @@ spe_slist_appendb
 ===================================================================================================
 */
 bool 
-spe_slist_appendb(spe_slist_t* slist, char* str, unsigned len) {
+spe_slist_appendb(SpeSlist_t* slist, char* str, unsigned len) {
   ASSERT(slist && str);
   if (!spe_slist_readyplus(slist, 1)) {
     SPE_LOG_ERR("spe_slist_readyplus error");
@@ -380,10 +380,10 @@ spe_slist_appendb(spe_slist_t* slist, char* str, unsigned len) {
   }
   // copy string
   if (!slist->data[slist->len]) {
-    slist->data[slist->len] = spe_string_create(80);
+    slist->data[slist->len] = SpeStringCreate(80);
     if (!slist->data[slist->len]) return false;
   }
-  spe_string_copyb(slist->data[slist->len], str, len);
+  SpeStringCopyb(slist->data[slist->len], str, len);
   slist->len++;
   return true;
 }
