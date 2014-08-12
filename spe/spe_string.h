@@ -15,12 +15,12 @@ struct SpeString_s {
 };
 typedef struct SpeString_s SpeString_t;
 
-struct spe_slist_s {
+struct SpeSlist_s {
   SpeString_t** data;   // spe_string list
   unsigned      len;    // used length
   unsigned      _size;  // count of spe_string
 };
-typedef struct spe_slist_s SpeSlist_t;
+typedef struct SpeSlist_s SpeSlist_t;
 
 extern bool 
 SpeStringCatb(SpeString_t* dst, const char* src, unsigned len);
@@ -35,31 +35,31 @@ extern int
 SpeStringConsume(SpeString_t* str, unsigned len);
 
 extern int  
-SpeStringrconsume(SpeString_t* str, unsigned len);
+SpeStringRconsume(SpeString_t* str, unsigned len);
 
 extern int  
-SpeString_search(SpeString_t* str, const char* key);
+SpeStringSearch(SpeString_t* str, const char* key);
 
 extern SpeSlist_t* 
-SpeString_split(SpeString_t* str, const char* key);
+SpeStringSplit(SpeString_t* str, const char* key);
 
 extern void 
-SpeStringlstrim(SpeString_t* str);
+SpeStringLstrim(SpeString_t* str);
 
 extern void 
-SpeStringrstrim(SpeString_t* str);
+SpeStringRstrim(SpeString_t* str);
 
 extern void
-SpeString_tolower(SpeString_t* str);
+SpeStringToLower(SpeString_t* str);
 
 extern void
-SpeString_toupper(SpeString_t* str);
+SpeStringToUpper(SpeString_t* str);
 
 extern int
-SpeStringread(int fd, SpeString_t* str, unsigned len);
+SpeStringRead(int fd, SpeString_t* str, unsigned len);
 
 extern int
-SpeStringread_append(int fd, SpeString_t* str, unsigned len);
+SpeStringReadAppend(int fd, SpeString_t* str, unsigned len);
 
 extern SpeString_t* 
 SpeStringCreate(unsigned defaultSize);
@@ -100,10 +100,10 @@ SpeStringClean(SpeString_t* str) {
 }
 
 static inline void 
-SpeString_strim(SpeString_t* str) {
+SpeStringStrim(SpeString_t* str) {
   ASSERT(str);
-  SpeStringlstrim(str);
-  SpeStringrstrim(str);
+  SpeStringLstrim(str);
+  SpeStringRstrim(str);
 }
 
 extern bool 

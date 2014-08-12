@@ -115,7 +115,7 @@ readNormal(void* arg) {
   }
   // check read type
   if (conn->readType == SPE_CONN_READUNTIL) {
-    int pos = SpeString_search(conn->readBuffer, conn->delim);
+    int pos = SpeStringSearch(conn->readBuffer, conn->delim);
     if (pos != -1) {
       SpeStringCopyb(conn->Buffer, conn->readBuffer->data, pos);
       SpeStringCats(conn->Buffer, conn->delim);
@@ -156,7 +156,7 @@ SpeConnReaduntil(SpeConn_t* conn, char* delim) {
   ASSERT(conn && conn->readType == SPE_CONN_READNONE);
   if (!delim || conn->Closed || conn->Error) return false;
   // (sync):
-  int pos = SpeString_search(conn->readBuffer, delim);
+  int pos = SpeStringSearch(conn->readBuffer, delim);
   if (pos != -1) {
     SpeStringCopyb(conn->Buffer, conn->readBuffer->data, pos);
     SpeStringConsume(conn->readBuffer, pos + strlen(delim));

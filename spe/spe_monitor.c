@@ -77,8 +77,8 @@ monitorAccept() {
     SpeSockClose(cfd);
     return;
   }
-  mconn->conn->ReadCallback.Handler = SPE_HANDLER1(driver_machine, mconn);
-  mconn->conn->WriteCallback.Handler = SPE_HANDLER1(driver_machine, mconn);
+  mconn->conn->ReadCallback.Handler   = SPE_HANDLER1(driver_machine, mconn);
+  mconn->conn->WriteCallback.Handler  = SPE_HANDLER1(driver_machine, mconn);
   mconn->status = MONITOR_WAITCMD;
   SpeConnReaduntil(mconn->conn, "\r\n");
 }
@@ -92,6 +92,16 @@ void
 monitorEnable() {
   if (!gMonitor) return;
   epollEnable(gMonitor->mfd, SPE_EPOLL_LISTEN, &gMonitor->monitorTask);
+}
+
+/*
+===================================================================================================
+SpeMonitorRegister
+===================================================================================================
+*/
+bool
+SpeMonitorRegister(const char* name, int type, void* value) {
+  return true;
 }
 
 /*

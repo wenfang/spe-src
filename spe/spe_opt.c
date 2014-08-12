@@ -96,14 +96,14 @@ speOptCreate(const char* configFileName) {
     // get one line from file
     if (SpeIoReaduntil(io, "\n") <= 0) break;
     SpeString_t* line = io->Buffer;
-    SpeString_strim(line);
+    SpeStringStrim(line);
     // ignore empty and comment line
     if (line->len == 0 || line->data[0] == '#') continue;
     // section line, get section
     if (line->data[0] == '[' && line->data[line->len-1] == ']') {
       SpeStringConsume(line, 1);
-      SpeStringrconsume(line, 1);
-      SpeString_strim(line);
+      SpeStringRconsume(line, 1);
+      SpeStringStrim(line);
       // section can't be null
       if (line->len == 0) {
         SpeIoDestroy(io);
@@ -114,19 +114,19 @@ speOptCreate(const char* configFileName) {
       continue;
     }
     // split key and value
-    SpeSlist_t* slist = SpeString_split(line, "=");
+    SpeSlist_t* slist = SpeStringSplit(line, "=");
     if (slist->len != 2) {
       spe_slist_destroy(slist);
       SpeIoDestroy(io);
       return false;
     }
     SpeString_t* key_str = slist->data[0];
-    SpeString_strim(key_str);
+    SpeStringStrim(key_str);
     strncpy(key, key_str->data, KEY_MAXLEN);
     key[KEY_MAXLEN-1] = 0;
 
     SpeString_t* val_str = slist->data[1];
-    SpeString_strim(val_str);
+    SpeStringStrim(val_str);
     strncpy(val, val_str->data, VAL_MAXLEN);
     val[VAL_MAXLEN-1] = 0;
     spe_slist_destroy(slist);

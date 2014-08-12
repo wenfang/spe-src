@@ -37,7 +37,7 @@ ioReadCommon(SpeIo_t* io) {
         return io->Buffer->len;
       }
     } else if (io->rtype == SPE_IO_READUNTIL) {
-      int pos = SpeString_search(io->readBuffer, io->delim);
+      int pos = SpeStringSearch(io->readBuffer, io->delim);
       if (pos != -1) {
         SpeStringCopyb(io->Buffer, io->readBuffer->data, pos);
         SpeStringConsume(io->readBuffer, pos+strlen(io->delim));
@@ -45,7 +45,7 @@ ioReadCommon(SpeIo_t* io) {
         return io->Buffer->len;
       }
     }
-    res = SpeStringread_append(io->fd, io->readBuffer, BUF_LEN);
+    res = SpeStringReadAppend(io->fd, io->readBuffer, BUF_LEN);
     if (res < 0) {
       if (errno == EINTR) continue;
       io->error = 1;

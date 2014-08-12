@@ -9,9 +9,9 @@
 
 struct SpeHttpRequest_s {
   SpeConn_t*    Conn;
-  SpeString_t* url;
+  SpeString_t*  url;
   SpeMap_t*     header;
-  SpeString_t* headerName;
+  SpeString_t*  headerName;
   http_parser   parser;
   unsigned      status;
   void*         Private;
