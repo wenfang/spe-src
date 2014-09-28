@@ -19,11 +19,12 @@ struct speServer_s {
 };
 typedef struct speServer_s speServer_t;
 
+// global server
 static speServer_t* gServer;
 
 static void
 serverAccept() {
-  int cfd = spe_sock_accept(gServer->sfd);
+  int cfd = SpeSockAccept(gServer->sfd);
   if (cfd <= 0) return;
   if (!gServer->handler) {
     SPE_LOG_ERR("gServer no handler set");
@@ -103,6 +104,7 @@ SpeServerInit
 */
 bool
 SpeServerInit(const char* addr, int port, SpeServerHandler handler) {
+  // server created? return false
   if (gServer) return false;
   // create server fd
   int sfd = SpeSockTcpServer(addr, port);

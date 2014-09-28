@@ -7,7 +7,7 @@
 #include <sys/socket.h>
 
 extern int  
-spe_sock_accept(int fd);
+SpeSockAccept(int fd);
 
 extern int  
 SpeSockAcceptTimeout(int fd, int timeout);

@@ -59,7 +59,7 @@ driver_machine(void* arg) {
 
 static void
 monitorAccept() {
-  int cfd = spe_sock_accept(gMonitor->mfd);
+  int cfd = SpeSockAccept(gMonitor->mfd);
   if (cfd < 0) {
     SPE_LOG_ERR("monitor sock accept error");
     return;

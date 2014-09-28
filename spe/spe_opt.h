@@ -10,7 +10,7 @@ extern const char*
 SpeOptString(char* section, char* key, const char* defaultValue);
 
 extern bool 
-speOptCreate(const char* configFileName);
+speOptCreate(const char* configFile);
 
 extern void
 speOptDestroy();

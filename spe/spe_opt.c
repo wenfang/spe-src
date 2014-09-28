@@ -78,17 +78,17 @@ SpeOptString(char* section, char* key, const char* defaultValue) {
 
 /*
 ===================================================================================================
-spe_opt_parse_file
+speOptCreate
     parse conf file
 ===================================================================================================
 */
 bool 
-speOptCreate(const char* configFileName) {
+speOptCreate(const char* configFile) {
   char sec[SEC_MAXLEN];
   char key[KEY_MAXLEN];
   char val[VAL_MAXLEN];
 
-  SpeIo_t* io = SpeIoCreate(configFileName);
+  SpeIo_t* io = SpeIoCreate(configFile);
   if (!io) return false;
   // set default section
   strcpy(sec, "global");

@@ -5,10 +5,10 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-#define SPE_TASK_FREE   0
-#define SPE_TASK_TIMER  1
-#define SPE_TASK_QUEUE  2
-#define SPE_TASK_RUN    3
+#define SPE_TASK_FREE   0   // task is alloc not in queue
+#define SPE_TASK_TIMER  1   // task in timer queue
+#define SPE_TASK_QUEUE  2   // task in running queue
+#define SPE_TASK_RUN    3   // task is run
 
 int gTaskNum;
 int gThreadTaskNum;

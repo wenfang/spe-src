@@ -67,11 +67,11 @@ error_out:
 
 /*
 ===================================================================================================
-spe_sock_accpet
+SpeSockAccpet
 ===================================================================================================
 */
 int 
-spe_sock_accept(int sfd) {
+SpeSockAccept(int sfd) {
   struct sockaddr_in caddr;
   socklen_t caddr_len = 0;
   bzero(&caddr, sizeof(caddr));

@@ -11,7 +11,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#define MAX_FD  600000
+#define MAX_FD  1000000
 
 #define likely(x)   __builtin_expect((x), 1)
 #define unlikely(x) __builtin_expect((x), 0)
@@ -42,7 +42,7 @@ spe_cpu_count() {
 }
 
 static inline bool
-spe_set_max_open_files(unsigned file_num) {
+speSetMaxOpenFiles(unsigned file_num) {
   struct rlimit r;
   r.rlim_cur = file_num;
   r.rlim_max = file_num;

@@ -29,7 +29,7 @@ SpeProcs(int procs) {
 int 
 main(int argc, char* argv[]) {
   if (argc > 2) {
-    printf("Usage: %s [config file]\n", argv[0]);
+    fprintf(stdout, "Usage: %s [configFile]\n", argv[0]);
     return 1;
   }
   // parse config file
@@ -38,7 +38,7 @@ main(int argc, char* argv[]) {
     return 1;
   }
   // set max open files
-  if (!spe_set_max_open_files(MAX_FD)) {
+  if (!speSetMaxOpenFiles(MAX_FD)) {
     fprintf(stderr, "[WARNNING] Set Max Open Files Failed\n");
   }
   // init signal

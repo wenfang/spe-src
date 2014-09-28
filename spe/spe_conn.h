@@ -16,9 +16,9 @@ struct SpeConn_s {
   SpeTask_t     writeTask;
   unsigned      readExpireTime;
   unsigned      writeExpireTime;
-  SpeString_t* readBuffer;
-  SpeString_t* writeBuffer;
-  SpeString_t* Buffer;
+  SpeString_t*  readBuffer;
+  SpeString_t*  writeBuffer;
+  SpeString_t*  Buffer;
   char*         delim;
   unsigned      rbytes;
   unsigned      readType:2;
@@ -35,26 +35,26 @@ extern bool
 SpeConnConnect(SpeConn_t* conn, const char* addr, const char* port);
 
 extern bool
-SpeConnReaduntil(SpeConn_t* conn, char* delim);
-
-extern bool
 SpeConnReadbytes(SpeConn_t* conn, unsigned len);
 
 extern bool
 SpeConnRead(SpeConn_t* conn);
 
-static inline bool
-SpeConnWriteb(SpeConn_t* conn, char* buf, unsigned len) {
-  ASSERT(conn && buf && len);
-  if (conn->Closed || conn->Error) return false;
-  return SpeStringCatb(conn->writeBuffer, buf, len);
-}
+extern bool
+SpeConnReaduntil(SpeConn_t* conn, char* delim);
 
 static inline bool
 SpeConnWrite(SpeConn_t* conn, SpeString_t* buf) {
   ASSERT(conn && buf);
   if (conn->Closed || conn->Error) return false;
   return SpeStringCatb(conn->writeBuffer, buf->data, buf->len);
+}
+
+static inline bool
+SpeConnWriteb(SpeConn_t* conn, char* buf, unsigned len) {
+  ASSERT(conn && buf && len);
+  if (conn->Closed || conn->Error) return false;
+  return SpeStringCatb(conn->writeBuffer, buf, len);
 }
 
 static inline bool
