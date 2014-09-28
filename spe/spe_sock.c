@@ -13,7 +13,7 @@
 #define DEFAULT_BACKLOG	10240
 
 static bool
-sock_addr_valid(const char* addr) {
+sockAddrValid(const char* addr) {
   if (!addr) return false;
   int dotCnt = 0;
   int addrLen = strlen(addr);
@@ -49,7 +49,7 @@ SpeSockTcpServer(const char* addr, int port) {
   //set socket address
   struct sockaddr_in saddr;
   saddr.sin_family = AF_INET;
-  if (sock_addr_valid(addr)) {
+  if (sockAddrValid(addr)) {
     if (inet_aton(addr, &saddr.sin_addr) == 0) goto error_out;
   } else {
     saddr.sin_addr.s_addr = htonl(INADDR_ANY);
