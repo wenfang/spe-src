@@ -1,4 +1,5 @@
 #include "spe_server.h"
+#include "spe_opt.h"
 #include "spe_task.h"
 #include "spe_shm.h"
 #include "spe_epoll.h"
@@ -95,6 +96,37 @@ void
 serverAfterLoop() {
   if (!gServer || !gServer->acceptMutex) return;
   if (gServer->acceptMutexHold) pthread_mutex_unlock(gServer->acceptMutex);
+}
+
+
+/*
+===================================================================================================
+SpeServerInit
+===================================================================================================
+*/
+bool
+speServerInit() {
+  if (gServer) return false;
+  const char* addr = SpeOptString(NULL, "ServerAddr", "127.0.0.1");
+  int port = SpeOptInt(NULL, "ServerPort", 7879);
+  int sfd = SpeSockTcpServer(addr, port);
+  if (sfd < 0) {
+    SPE_LOG_ERR("SpeSockTcpServer error");
+    return false;
+  }
+  SpeSockSetBlock(sfd, 0);
+  // create gServer
+  gServer = calloc(1, sizeof(speServer_t));
+  if (!gServer) {
+    SPE_LOG_ERR("server struct alloc error");
+    SpeSockClose(sfd);
+    return false;
+  }
+  gServer->sfd      = sfd;
+  gServer->handler  = NULL;
+  SpeTaskInit(&gServer->listenTask);
+  gServer->listenTask.Handler = SPE_HANDLER0(serverAccept);
+  return true;
 }
 
 /*

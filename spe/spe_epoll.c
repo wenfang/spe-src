@@ -130,9 +130,12 @@ epollWakeup(void) {
 epollInit
 ===================================================================================================
 */
-static void
+static bool
 epollInit(void) {
   epfd = epoll_create(1024);
+  if (epfd < 0) {
+    return false;
+  }
   // create eventfd
   epoll_eventfd = eventfd(0, 0);
   SpeSockSetBlock(epoll_eventfd, 0);
@@ -142,6 +145,7 @@ epollInit(void) {
   ee.data.fd  = epoll_eventfd;
   ee.events   = EPOLLIN;
   epoll_ctl(epfd, EPOLL_CTL_ADD, epoll_eventfd, &ee);
+  return true;
 }
 
 /*
@@ -160,4 +164,6 @@ __attribute__((constructor))
 static void
 epoll_init(void) {
   epollInit();
+  fprintf(stderr, "[ERROR] epoll init error\n");
+  exit(0);
 }

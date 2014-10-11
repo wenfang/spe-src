@@ -45,6 +45,14 @@ main(int argc, char* argv[]) {
   speSignalInit();
   SpeSignalRegister(SIGPIPE, SIG_IGN);
   SpeSignalRegister(SIGHUP, SIG_IGN);
+  // check mode
+  const char* mode = SpeOptString(NULL, "Mode", "Server");
+  if (!strcmp(mode, "Server")) {
+    if (!speServerInit()) {
+      fprintf(stderr, "[ERROR] server init error");
+      return 1;
+    }
+  }
   // call mod_init
   if (!mod_init()) {
     fprintf(stderr, "[ERROR] mod_init Error\n");
